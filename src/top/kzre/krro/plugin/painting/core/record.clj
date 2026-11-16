@@ -2,7 +2,6 @@
   (:require
     [clojure.spec.alpha :as s]
     [top.kzre.krro.canvas.core.layer.path :as path]
-    [top.kzre.krro.curve.bezier2d.spec :as bezier]
     [top.kzre.krro.plugin.painting.core.project.canvas :as pc]
     [top.kzre.krro.plugin.painting.core.store :as store]
     [top.kzre.krro.plugin.painting.core.tool.util :as tool-util])
@@ -14,8 +13,10 @@
 ;; =============================== 项目数据 =====================================
 (s/def ::canvas-data ::pc/canvas-data)
 
-;; ================================= 应用运行时数据 ====================================
-(s/def ::cursor-position ::bezier/point)
+(s/def ::x number?)
+(s/def ::y number?)
+(s/def ::cursor-position (s/keys
+                           :req-un [::x ::y]))
 
 
 (s/def ::canvas-record

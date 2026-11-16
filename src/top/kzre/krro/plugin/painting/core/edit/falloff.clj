@@ -1,7 +1,7 @@
 (ns top.kzre.krro.plugin.painting.core.edit.falloff
   "衰减编辑参数规格"
   (:require [clojure.spec.alpha :as s]
-            [top.kzre.krro.curve.bezier2d.spec :as bezier]))
+            [top.kzre.krro.canvas.vector.spec :as vector]))
 
 ;; ── 衰减曲线预设 ──
 (s/def ::curve-preset
@@ -21,7 +21,7 @@
     :screen-space}) ;; 屏幕空间衰减（固定屏幕像素半径，视口缩放时逻辑半径自动适应）
 
 ;; ── 自定义曲线 ──
-(s/def ::custom-curve ::bezier/curve)
+(s/def ::custom-curve ::vector/curve)
 
 ;; ── 衰减编辑选项 ──
 (s/def ::falloff-options

@@ -11,7 +11,8 @@
             [top.kzre.krro.plugin.painting.core.project.core]
             [top.kzre.krro.plugin.painting.core.project.raster-layer :as pr]
             [top.kzre.krro.plugin.painting.core.schedule.core]
-            [top.kzre.krro.plugin.painting.core.tool.registry]))
+    ;;[top.kzre.krro.plugin.painting.core.tool.registry ]
+            ))
 
 (defn init []
   (plugin/reg-plugin! pr/tiled-canvas-codec-plugin-def)
