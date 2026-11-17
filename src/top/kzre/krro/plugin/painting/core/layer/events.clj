@@ -12,10 +12,10 @@
     [top.kzre.krro.plugin.painting.core.state :as state]
     [top.kzre.krro.plugin.painting.core.store :as store]))
 
-
+;; TODO 进 oplog
 ;; 新建空白光栅图层
 (rf/reg-event-fx
-  :krro.painting :new-raster-layer
+  store/app-id :new-raster-layer
   (fn [cofx [_ record-id]]
     (let [record (:record cofx)
           canvas-data (:canvas-data record)
@@ -35,7 +35,7 @@
             ]})))
 
 (rf/reg-event-fx
-  :krro.painting :new-vector-layer
+  store/app-id :new-vector-layer
   (fn [cofx [_ record-id]]
     (let [record (:record cofx)
           selected-id (get-in record [:canvas-data :current-layer-id])
@@ -53,7 +53,7 @@
         [:rerender-canvas-frame-fx record-id]]})))
 
 (rf/reg-event-fx
-  :krro.painting :new-perspective-layer
+  store/app-id :new-perspective-layer
   (fn [cofx [_ record-id]]
     (let [record (:record cofx)
           canvas-data (:canvas-data record)
@@ -78,12 +78,12 @@
           [:rerender-canvas-frame-fx record-id]]}))  ;; 刷新 UI
 
 (rf/reg-event-fx
-  :krro.painting :before-redo-add-raster-layer
-  (fn [_ [_ layer-id canvas-id dirty-tiles]]
+  store/app-id :before-redo-add-raster-layer
+  (fn [_ [_ canvas-id layer-id dirty-tiles]]
     {:fx [[:unchecked-create-raster-data layer-id canvas-id dirty-tiles]]}))
 
 (rf/reg-event-fx
-  :krro.painting :after-redo-add-raster-layer
+  store/app-id :after-redo-add-raster-layer
   (fn [_ [_ record-id dirty-tiles]]
     {:fx [[:render-canvas record-id dirty-tiles]
           [:rerender-canvas-frame-fx record-id]]}))

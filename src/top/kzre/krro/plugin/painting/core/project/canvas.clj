@@ -14,20 +14,20 @@
 (defonce global-tile-size 64)
 
 ;; 水平镜像编辑
-(s/def ::horizontal-mirror-enabled boolean?)
+(s/def ::horizontal-mirror-enabled (s/nilable boolean?))
 ;; 垂直镜像编辑
-(s/def ::vertical-mirror-enabled boolean?)
-(s/def ::horizontal-mirror-center number?)
-(s/def ::vertical-mirror-center number?)
+(s/def ::vertical-mirror-enabled (s/nilable boolean?))
+(s/def ::horizontal-mirror-center (s/nilable number?))
+(s/def ::vertical-mirror-center (s/nilable number?))
 
-(s/def ::tiling-enabled boolean?)
+(s/def ::tiling-enabled (s/nilable boolean?))
 
 (s/def ::id keyword?)
 (s/def ::current-layer-id (s/nilable keyword?))
 (s/def ::width number?)
 (s/def ::height number?)
 (s/def ::layers vector?)
-(s/def ::current-tool keyword?)
+(s/def ::current-tool (s/nilable keyword?))
 (s/def ::canvas-data
   (s/keys
     :req-un [::id ::width ::height ::layers]
@@ -39,6 +39,8 @@
              ::vertical-mirror-center
              ::tiling-enabled]))
 
+;; TODO 会话数据不进CanvasData。关闭画布时候另外持久化一下
+;; TODO 进CanvasData 唯一标准，你是否希望这个数据在undo/redo时候恢复
 (defrecord CanvasData
   [id                                   ;; 必需，keyword?
    width                                ;; 必需，number?
@@ -59,7 +61,7 @@
                :defaults {:layers []})
 
 (defn make-canvas-data
-  [width height & {:keys [id layers current-layer-id current-brush
+  [width height & {:keys [id layers current-layer-id brush-tool-id
                           horizontal-mirror-enabled horizontal-mirror-center
                           vertical-mirror-enabled vertical-mirror-center tiling-enabled]
                    :or {id (keyword (str "canvas-" (UUID/randomUUID)))
@@ -69,14 +71,14 @@
                         vertical-mirror-enabled false
                         vertical-mirror-center 0
                         tiling-enabled false
-                        current-brush :brush}}]
+                        brush-tool-id :brush}}]
   (map->CanvasData
     {:id id
      :width width
      :height height
      :layers layers
      :current-layer-id current-layer-id
-     :current-tool current-brush
+     :current-tool brush-tool-id
      :horizontal-mirror-enabled horizontal-mirror-enabled
      :horizontal-mirror-center horizontal-mirror-center
      :vertical-mirror-enabled vertical-mirror-enabled

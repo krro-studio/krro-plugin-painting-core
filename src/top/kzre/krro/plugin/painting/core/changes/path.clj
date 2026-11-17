@@ -17,13 +17,13 @@
     [top.kzre.krro.canvas.core.layer.util :as util]
     [top.kzre.krro.canvas.vector.core :as cv]
     [top.kzre.krro.core.util.diff :as diff]
+    [top.kzre.krro.plugin.painting.core.canvas.undo.edit-canvas :as undo.edit-canvas]
     [top.kzre.krro.plugin.painting.core.changes.composite :as composite]
     [top.kzre.krro.plugin.painting.core.oplog.protocol :as proto]
     [top.kzre.krro.plugin.painting.core.project.vector-layer :as pv]
-    [top.kzre.krro.plugin.painting.core.record :as record]
-    [top.kzre.krro.plugin.painting.core.undo.core :as undo])
+    [top.kzre.krro.plugin.painting.core.record :as record])
   (:import
-    (java.lang AutoCloseable)))
+   (java.lang AutoCloseable)))
 
 (defrecord VectorAnchorPositionsChanged
   [layer-id
@@ -51,7 +51,8 @@
 
   (record! [_ record]
     (let [{:keys [canvas-id]} record]
-      (undo/record-canvas-edited! canvas-id))))
+      (undo.edit-canvas/record-edit-canvas!
+        canvas-id))))
 
 
 (defrecord VectorPathsGeometryChanged
@@ -103,7 +104,8 @@
 
   (record! [_ record]
     (let [{:keys [canvas-id]} record]
-      (undo/record-canvas-edited! canvas-id))))
+      (undo.edit-canvas/record-edit-canvas!
+        canvas-id))))
 
 (defrecord VectorPathOrderChanged
   [layer-id new-order dirty-tiles dirty-transform]
@@ -126,7 +128,8 @@
 
   (record! [_ record]
     (let [{:keys [canvas-id]} record]
-      (undo/record-canvas-edited! canvas-id))))
+      (undo.edit-canvas/record-edit-canvas!
+        canvas-id))))
 
 (defrecord VectorPathsAttrChanged
   [layer-id
@@ -155,7 +158,8 @@
 
   (record! [_ record]
     (let [{:keys [canvas-id]} record]
-      (undo/record-canvas-edited! canvas-id))))
+      (undo.edit-canvas/record-edit-canvas!
+        canvas-id))))
 
 
 (defn make-vector-anchor-positions-changed

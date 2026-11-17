@@ -11,7 +11,6 @@
             [top.kzre.krro.plugin.painting.core.project.core]
             [top.kzre.krro.plugin.painting.core.project.raster-layer :as pr]
             [top.kzre.krro.plugin.painting.core.schedule.core]
-    ;;[top.kzre.krro.plugin.painting.core.tool.registry ]
             ))
 
 (defn init []
@@ -19,5 +18,7 @@
   (undo/init-undo-hooks!)
   )
 
-
-(plugin/reg-plugin! {:name :krro.plugin/painting :mount init})
+;; 注册即激活
+(plugin/reg-plugin!
+  {:name :krro.plugin/painting
+   :mount init})

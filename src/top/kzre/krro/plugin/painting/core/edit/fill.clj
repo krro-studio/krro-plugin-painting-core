@@ -85,7 +85,11 @@
                   new-record (-> record
                                  (assoc-in [:canvas-data :layers] new-layers))]
               {:record new-record
-               :fx [[:record-raster-layer-edited record-id layer-id old-canvas out-new-canvas dirties]
+               :fx [[:record-raster-layer-edited
+                     record-id layer-id
+                     old-canvas out-new-canvas
+                     dirties
+                     layer-transform]
                     [:render-canvas record-id dirties layer-transform]
                     ]})))
        {:fx [[:warn "Fill tool is only work for raster layer!"]]})

@@ -10,20 +10,29 @@
   (:import
     (top.kzre.krro.plugin.painting.core.edit.tool IToolData)))
 
-(custom/defcustom :krro.painting/viewport-pan-speed
+(defn- viewport-pan-speed []
+  :krro.painting/viewport-pan-speed)
+
+(custom/defcustom (viewport-pan-speed)
                   1.0
                   :type :number
                   :group :krro.painting/edit
                   :doc "视口平移速度，1.0 为像素同比速度。")
 
-(custom/defcustom :krro.painting/viewport-pan-dead-zone
+(defn- viewport-pan-dead-zone []
+  :krro.painting/viewport-pan-dead-zone)
+
+(custom/defcustom (viewport-pan-dead-zone)
                   0.5
                   :type :number
                   :group :krro.painting/edit
                   :doc "视口平移死区（像素），位移小于此值时忽略移动。")
 
-(custom/defcustom :krro.painting/viewport-zoom-sensitivity
-                  1.005
+(defn- viewport-zoom-sensitivity-key []
+  :krro.painting/viewport-zoom-sensitivity)
+
+(custom/defcustom (viewport-zoom-sensitivity-key)
+                  1.05
                   :type :number
                   :group :krro.painting/edit
                   :doc "滚轮缩放灵敏度，表示每一格 delta 的缩放因子。1.1 表示每格放大 10%。")
@@ -58,8 +67,8 @@
     (let [record (:record cofx)
           state (get-in record [ :viewport-state])]
       (when (instance? ViewportState state)
-        (let [speed (custom/get-custom :krro.painting/viewport-pan-speed frame)
-              dead-zone (custom/get-custom :krro.painting/viewport-pan-dead-zone frame)
+        (let [speed (custom/get-custom (viewport-pan-speed))
+              dead-zone (custom/get-custom (viewport-pan-dead-zone))
               init-cursor-x (get-in record [ :viewport-state :init-cursor-x])
               init-cursor-y (get-in record [ :viewport-state :init-cursor-y])
               dx (* speed (- x init-cursor-x))
@@ -78,7 +87,7 @@
                      (when (and tool-data (satisfies? tool/IToolData tool-data))
                        (tool/overlay tool-data (:krro.painting/tool-context cofx)))
                      frame]
-                    [:render-canvas record-id (viewport/refreshed) ]]})))))))
+                    [:render-canvas record-id (viewport/refreshed)]]})))))))
 
 
 (rf/reg-event-fx
@@ -89,7 +98,7 @@
       (let [record (:record cofx)
             ctx (:krro.painting/tool-context cofx)
             {:keys [viewport canvas-event]} ctx
-            sensitivity (custom/get-custom :krro.painting/viewport-zoom-sensitivity)
+            sensitivity (custom/get-custom (viewport-zoom-sensitivity-key))
             old-zoom (:zoom viewport)
             new-zoom (-> old-zoom
                          (* (Math/pow sensitivity (double delta-y)))

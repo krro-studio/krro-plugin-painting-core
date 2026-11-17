@@ -4,7 +4,7 @@
    [taoensso.timbre :as log]
    [top.kzre.krro.core.hook :as hook]
    [top.kzre.krro.core.message :as msg]
-   [top.kzre.krro.core.reframe :as rf]
+   [top.kzre.krro.core.reframe.core :as rf]
    [top.kzre.krro.plugin.painting.core.layer.destroy :as destroy]
    [top.kzre.krro.plugin.painting.core.project.canvas :as pc]
    [top.kzre.krro.plugin.painting.core.state :as state]
@@ -32,7 +32,13 @@
     (msg/error message)))
 
 
+;; 刷新UI
+(rf/reg-fx
+  store/app-id :rerender-canvas-frame-fx
+  (fn [_ record-id]
+    (state/rerender-frame-with-canvas-id! record-id)))
 
+;; 刷新画布
 (rf/reg-fx
   store/app-id :render-canvas
   (fn render-canvas [_ record-id changes & ignored]
@@ -58,9 +64,3 @@
         (destroy/destroy-layer l))
       ;(store/unreg-canvas-store record-id)
       )))
-
-
-(rf/reg-fx
-  :krro.painting :rerender-canvas-frame-fx
-  (fn [_ record-id]
-    (state/rerender-frame-with-canvas-id! record-id)))

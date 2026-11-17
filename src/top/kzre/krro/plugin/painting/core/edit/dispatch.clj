@@ -6,12 +6,15 @@
     [top.kzre.krro.plugin.painting.core.store :as store]))
 
 (defmulti tool-event
-  (fn [current-tool event-map]
-    (if (and (= :pointer (:device-type event-map))
-             (= :middle (:mouse-button event-map)))
+  (fn [current-tool {:keys [device-type mouse-button]
+                     :as _event-map}]
+    (if (and (= :pointer device-type)
+          (or (= :middle mouse-button)
+              (nil? mouse-button)))
       :viewport
       current-tool)
     ))
+
 ;; 抽取到UI
 (defmethod tool-event :default [_ _] nil)
 

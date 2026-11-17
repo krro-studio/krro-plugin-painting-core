@@ -2,6 +2,7 @@
   "画布相关的事件处理器"
   (:require
     [top.kzre.krro.core.reframe.core :as rf]
+    [top.kzre.krro.plugin.painting.core.changes.viewport :as viewport]
     [top.kzre.krro.plugin.painting.core.record :as record]
     [top.kzre.krro.plugin.painting.core.store :as store]))
 
@@ -9,8 +10,8 @@
 (defn set-selected-layer
   [record layer-id]
   (-> record
-      (assoc-in [ :selected-layer-id] layer-id)
-      (assoc-in [ :selected-layer-ids] [layer-id])))
+      (assoc-in [:selected-layer-id] layer-id)
+      (assoc-in [:selected-layer-ids] [layer-id])))
 
 (defn append-selected-layer
   "向 record 的选中图层列表追加一个图层 ID（去重），并更新当前选中 ID 为该图层。"
@@ -22,7 +23,7 @@
                        (conj layer-id)
                        (distinct)
                        (vec))))
-      (assoc-in [ :selected-layer-id] layer-id)))
+      (assoc-in [:selected-layer-id] layer-id)))
 
 (defn clear-dirty-tiles
   [record]
@@ -62,6 +63,12 @@
       {:record new-record
        :fx [[:rerender-canvas-frame-fx record-id]]})))
 
+;; 刷新和画布相关的所有UI和画布
+(rf/reg-event-fx
+  store/app-id :refresh-canvas
+  (fn [_ [_ record-id]]
+    {:fx [[:rerender-canvas-frame-fx record-id]
+          [:render-canvas record-id (viewport/refreshed)]]}))
 
 (rf/reg-event-fx
   store/app-id :canvas/set-cursor-position

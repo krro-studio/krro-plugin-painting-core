@@ -3,12 +3,12 @@
    [top.kzre.krro.canvas.core.layer.util :as util]
    [top.kzre.krro.core.util.diff :as diff]
    [top.kzre.krro.plugin.painting.core.changes.composite :as composite]
+   [top.kzre.krro.plugin.painting.core.layer.undo.edit-raster-layer :as undo-edit-raster-layer]
    [top.kzre.krro.plugin.painting.core.oplog.protocol :as proto]
-   [top.kzre.krro.plugin.painting.core.record :as record]
-   [top.kzre.krro.plugin.painting.core.undo.core :as undo])
+   [top.kzre.krro.plugin.painting.core.record :as record])
   (:import
-    (java.lang AutoCloseable)
-    (top.kzre.krro.util.tile TiledCanvas)))
+   (java.lang AutoCloseable)
+   (top.kzre.krro.util.tile TiledCanvas)))
 
 (defrecord RasterLayerDirty
   [layer-id ^TiledCanvas old-canvas ^TiledCanvas new-canvas dirty-tiles dirty-transform]
@@ -39,9 +39,11 @@
       (throw (ex-info "cannot record operation without old-canvas"
                       {:layer-id layer-id
                        :new-canvas new-canvas})))
-    (undo/record-raster-layer-edited!
+    (undo-edit-raster-layer/record-edit-raster-layer!
       ;; undo 系统只读
-      canvas-id layer-id old-canvas new-canvas dirty-tiles dirty-transform)))
+      canvas-id layer-id
+      old-canvas new-canvas
+      dirty-tiles dirty-transform)))
 
 (defn make-raster-layer-dirty
   ([layer-id old-canvas new-canvas dirty-tiles dirty-transform]
