@@ -11,7 +11,6 @@
   (:import (top.kzre.krro.plugin.painting.core.edit.anchor.state AnchorState)))
 
 ;; 进入顶点挤出模态
-;; TODO 顶点挤出模态完成后，自动进入 fit-segment-smooth 模态
 (rf/reg-event-fx
   store/app-id :anchor/enter-extrude-anchor-modal
   [(cleanup-tool-interceptor AnchorState :factory (fn [_] (anchor.state/make-state)))
@@ -66,6 +65,10 @@
             :layer-event layer-event)]}))))
 
 ;; 退出锚点挤出模态 —— commit
+;; 挤出只是把新锚点放到光标处，新段还是直的——
+;; 提交后分派独立事件进入段自由拟合模态：新段跟随光标弯出，单击提交。
+;; 拟合模态不在本事件的 :transaction 里 begin——事务指令先于 reframe 结果处理执行，
+;; 连续两条指令时 commit 产生的变更还没落库，begin 会读到旧 record。
 (rf/reg-event-fx
   store/app-id :anchor/exit-extrude-anchor-modal
   [(cleanup-tool-interceptor AnchorState :factory (fn [_] (anchor.state/make-state)))
@@ -73,7 +76,8 @@
    (transaction-interceptor)]
   (fn [cofx _]
     (let [ctx (get-tool-context cofx)
-          {:keys [layer-type transaction-kind]} ctx]
+          {:keys [layer-event layer-type transaction transaction-kind]} ctx
+          [_ record-id event-map frame] (:event cofx)]
       (cond
         (not= :vector layer-type)
         {:fx [[:warn (str "Anchor tool is invalid for " layer-type)]]}
@@ -85,4 +89,8 @@
         {:record (-> (:record cofx)
                      (assoc-in [ :tool-data :mode]  nil)
                      (assoc-in [ :tool-data :modal] false))
-         :transaction [(tx/commit-transaction (anchor-extrude-modal/kind))]}))))
+         :transaction [(tx/commit-transaction (anchor-extrude-modal/kind))]
+         :dispatch [:anchor/enter-fit-segment-free-modal
+                    record-id event-map frame
+                    (:new-anchor transaction)
+                    (select-keys layer-event [:x :y])]}))))

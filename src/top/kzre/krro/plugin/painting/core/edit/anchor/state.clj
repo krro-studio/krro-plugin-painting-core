@@ -7,6 +7,8 @@
    [top.kzre.krro.plugin.painting.core.edit.anchor.anchor-quadtree :as tree]
    [top.kzre.krro.plugin.painting.core.edit.tool :as p]
    [top.kzre.krro.plugin.painting.core.transactions.anchor-extrude-modal :as anchor-extrude-modal]
+   [top.kzre.krro.plugin.painting.core.transactions.anchor-fit-segment-free-modal
+     :as anchor-fit-modal]
    [top.kzre.krro.plugin.painting.core.transactions.anchor-width-adjust-modal :as tx-width]
    [top.kzre.krro.plugin.painting.core.viewport :as vp])
   (:import
@@ -36,6 +38,14 @@
           (and (= (anchor-extrude-modal/kind) tx-kind)
                (= type :release))
           :anchor/exit-extrude-anchor-modal
+
+          (and (= (anchor-fit-modal/kind) tx-kind)
+               (= type :move))
+          :anchor/fit-segment-free
+
+          (and (= (anchor-fit-modal/kind) tx-kind)
+               (= type :release))
+          :anchor/exit-fit-segment-free-modal
 
           (and (= (tx-width/kind) tx-kind)
                (= type :move))
