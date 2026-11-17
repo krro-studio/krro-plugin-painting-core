@@ -76,29 +76,6 @@
     ;; TODO: 调 v/delete-anchor → change/make-vector-anchor-deleted
     ))
 
-(rf/reg-event-fx
-  store/app-id :oplog/anchor-extrude
-  (fn [cofx [_ canvas-id layer-id end-anchor
-             & {:keys [point]
-                :as ctx}]]
-    (let [{:keys [layer layer-transform]} (record/layer-context (:record cofx) layer-id)
-          old-paths (cv/paths layer)
-          new-point (or point (cv/anchor-point old-paths end-anchor))
-          result    (cv/extrude-anchor old-paths end-anchor new-point)]
-      (if result
-        (let [{:keys [paths]} result
-              path-id  (:path-id end-anchor)
-              new-path (get paths path-id)
-              op       (change/make-vector-paths-geometry-changed
-                         layer-id old-paths layer-transform
-                         :saved {path-id new-path})]
-          {:dispatch [:oplog/log canvas-id op ctx]})
-        (do
-          (log/info "anchor-extrude: end-anchor is not an endpoint"
-                    {:canvas-id  canvas-id
-                     :layer-id   layer-id
-                     :end-anchor end-anchor})
-          nil)))))
 
 (rf/reg-event-fx
   store/app-id :oplog/anchor-weld
