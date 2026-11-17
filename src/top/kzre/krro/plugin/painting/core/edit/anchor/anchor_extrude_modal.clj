@@ -14,7 +14,7 @@
 ;; TODO 顶点挤出模态完成后，自动进入 fit-segment-smooth 模态
 (rf/reg-event-fx
   store/app-id :anchor/enter-extrude-anchor-modal
-  [(cleanup-tool-interceptor AnchorState :factory (fn [_] (anchor.state/make-anchor-state)))
+  [(cleanup-tool-interceptor AnchorState :factory (fn [_] (anchor.state/make-state)))
    (tool-context-interceptor)
    (transaction-interceptor)]
   (fn [cofx _]
@@ -45,7 +45,7 @@
 ;; 挤出顶点 —— move 阶段
 (rf/reg-event-fx
   store/app-id :anchor/extrude-anchor
-  [(cleanup-tool-interceptor AnchorState :factory (fn [_] (anchor.state/make-anchor-state)))
+  [(cleanup-tool-interceptor AnchorState :factory (fn [_] (anchor.state/make-state)))
    (tool-context-interceptor)
    (transaction-interceptor)]
   (fn [cofx [_ _record-id _ frame]]
@@ -68,7 +68,7 @@
 ;; 退出锚点挤出模态 —— commit
 (rf/reg-event-fx
   store/app-id :anchor/exit-extrude-anchor-modal
-  [(cleanup-tool-interceptor AnchorState :factory (fn [_] (anchor.state/make-anchor-state)))
+  [(cleanup-tool-interceptor AnchorState :factory (fn [_] (anchor.state/make-state)))
    (tool-context-interceptor)
    (transaction-interceptor)]
   (fn [cofx _]

@@ -21,11 +21,7 @@
 
 (defmethod dispatch/tool-event :viewport
   [_ event-map]
-  (case (:type event-map)
-    :press :viewport-pan/press
-    :drag :viewport-pan/drag
-    :scroll :viewport-pan/scroll
-    nil))
+  (dispatch/viewport-event event-map))
 
 (defmethod dispatch/tool-event :brush
   [_ event-map]
@@ -51,7 +47,7 @@
     nil))
 
 ;; 锚点拖动为固定分派
-(defmethod dispatch/tool-event :anchor-translate
+(defmethod dispatch/tool-event :anchor
   [_ event-map]
   (case (:type event-map)
     :press :anchor-translate/press

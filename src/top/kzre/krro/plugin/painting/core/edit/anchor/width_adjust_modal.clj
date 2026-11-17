@@ -29,7 +29,7 @@
 
 (rf/reg-event-fx
   store/app-id :anchor/enter-adjust-width-modal
-  [(cleanup-tool-interceptor AnchorState :factory (fn [_] (anchor.state/make-anchor-state)))
+  [(cleanup-tool-interceptor AnchorState :factory (fn [_] (anchor.state/make-state)))
    (tool-context-interceptor)
    (transaction-interceptor)]
   (fn [cofx _]
@@ -60,7 +60,7 @@
 
 (rf/reg-event-fx
   store/app-id :anchor/adjust-width
-  [(cleanup-tool-interceptor AnchorState :factory (fn [_] (anchor.state/make-anchor-state)))
+  [(cleanup-tool-interceptor AnchorState :factory (fn [_] (anchor.state/make-state)))
    (tool-context-interceptor)
    (transaction-interceptor)]
   (fn [cofx _]
@@ -87,7 +87,7 @@
 
 (rf/reg-event-fx
   store/app-id :anchor/exit-adjust-width-modal
-  [(cleanup-tool-interceptor AnchorState :factory (fn [_] (anchor.state/make-anchor-state)))
+  [(cleanup-tool-interceptor AnchorState :factory (fn [_] (anchor.state/make-state)))
    (tool-context-interceptor)
    (transaction-interceptor)]
   (fn [cofx _]

@@ -97,7 +97,7 @@
         ;; 图层不可见时候不显示 overlay
         []))))
 
-(defn make-anchor-state
+(defn make-state
   [& {:keys [_mode ]
       :or {}}]
   (map->AnchorState {}))
