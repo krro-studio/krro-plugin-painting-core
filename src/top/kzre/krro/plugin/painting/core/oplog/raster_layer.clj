@@ -5,15 +5,17 @@
             [top.kzre.krro.plugin.painting.core.store :as store])
   (:import (top.kzre.krro.util.tile TiledCanvas)))
 
+(defn edit-raster-layer [cofx [_ record-id layer-id canvas
+                               & {:as ctx}]]
+  (let [{:keys [layer layer-transform]}
+        (record/layer-context (:record cofx) layer-id)
+        layer-canvas (:canvas layer)
+        dirties (into (set (.getTiles ^TiledCanvas layer-canvas))
+                      (set (.getTiles ^TiledCanvas canvas)))
+        op (change/make-raster-layer-dirty layer-id (.copy layer-canvas) canvas dirties layer-transform)]
+    {:dispatch [:oplog/log record-id op ctx]}))
 
+;; 任意编辑的更改，一般用于提交或者回退
 (rf/reg-event-fx
-  store/app-id :oplog/raster-layer-canvas-dirty
-  (fn [cofx [_ record-id layer-id canvas
-             & {:as ctx}]]
-    (let [{:keys [layer layer-transform]}
-          (record/layer-context (:record cofx) layer-id)
-          layer-canvas (:canvas layer)
-          dirties (into (set (.getTiles ^TiledCanvas layer-canvas))
-                        (set (.getTiles ^TiledCanvas canvas)))
-          op (change/make-raster-layer-dirty layer-id (.copy layer-canvas) canvas dirties layer-transform)]
-      {:dispatch [:oplog/log record-id op ctx]})))
+  store/app-id :oplog/edit-raster-layer
+  edit-raster-layer)

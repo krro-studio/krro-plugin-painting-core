@@ -47,7 +47,7 @@
 (defmethod dispatch/tool-event :fill
   [_ event-map]
   (case (:type event-map)
-    :press :fill-tool/press
+    :release :fill-tool/release
     nil))
 
 ;; 锚点拖动为固定分派

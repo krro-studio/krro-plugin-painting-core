@@ -11,6 +11,7 @@
   (:import (top.kzre.krro.plugin.painting.core.edit.anchor.state AnchorState)))
 
 ;; 进入顶点挤出模态
+;; TODO 顶点挤出模态完成后，自动进入 fit-segment-smooth 模态
 (rf/reg-event-fx
   store/app-id :anchor/enter-extrude-anchor-modal
   [(cleanup-tool-interceptor AnchorState :factory (fn [_] (anchor.state/make-anchor-state)))

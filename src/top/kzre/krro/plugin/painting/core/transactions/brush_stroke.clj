@@ -59,7 +59,7 @@
   (rollback [_ _ record]
     (let [{:keys [canvas-id layer-id]} (record/layer-context record)
           canvas-backup (:canvas layer-backup)]
-      {:dispatch [:oplog/raster-layer-canvas-dirty canvas-id layer-id canvas-backup
+      {:dispatch [:oplog/edit-raster-layer canvas-id layer-id canvas-backup
                   :undo? false]
        :fx [[:tool/set-command-enabled true]]})))
 
