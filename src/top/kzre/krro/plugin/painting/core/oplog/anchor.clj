@@ -26,25 +26,7 @@
 ;; 几何 —— 锚点位置变化
 ;; ═══════════════════════════════════════════════
 
-;; TODO:
-;;   1. 取 layer / old-paths
-;;   2. 若 :falloff-opts 存在 → 在 path-ids 范围内算 affected（按距离加权）
-;;      否则 → affected = anchors（统一位移）
-;;   3. 应用位移 → new-paths
-;;   4. change/make-vector-anchor-positions-changed
-;;   5. dispatch :oplog/log
-(rf/reg-event-fx
-  store/app-id :oplog/anchor-translate
-  (fn [cofx [_ canvas-id layer-id anchors dx dy
-             & {:keys [path-ids snap-opts falloff-opts pivot-opts]
-                :as ctx}]]
-    (let [{:keys [layer layer-transform]} (record/layer-context (:record cofx) layer-id)
-          old-paths (cv/paths layer)
-          new-paths (cv/translate-anchors old-paths anchors dx dy)
-          op        (apply change/make-vector-anchor-positions-changed
-                      layer-id old-paths new-paths layer-transform
-                      anchors)]
-      {:dispatch [:oplog/log canvas-id op ctx]})))
+;; translate 已拆到 oplog.anchor-translate —— 拖动事务需要 :old-paths 提交基准。
 
 (rf/reg-event-fx
   store/app-id :oplog/anchor-rotate

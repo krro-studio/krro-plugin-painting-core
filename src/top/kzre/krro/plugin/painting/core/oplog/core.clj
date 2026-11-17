@@ -8,5 +8,6 @@
     [top.kzre.krro.plugin.painting.core.oplog.vector-stroke]
     [top.kzre.krro.plugin.painting.core.oplog.path]
     [top.kzre.krro.plugin.painting.core.oplog.anchor]
+    [top.kzre.krro.plugin.painting.core.oplog.anchor-translate]
     [top.kzre.krro.plugin.painting.core.oplog.width]
     ))
