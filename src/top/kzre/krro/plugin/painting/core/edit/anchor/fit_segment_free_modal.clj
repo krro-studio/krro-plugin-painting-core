@@ -1,6 +1,6 @@
 (ns top.kzre.krro.plugin.painting.core.edit.anchor.fit-segment-free-modal
   "段自由拟合模态的事件入口：
-     :anchor/enter-fit-segment-free-modal —— begin（挤出提交后分派进入）
+     :anchor-fit-segment-free/trigger —— begin（挤出提交后分派进入）
      :anchor/fit-segment-free             —— move 预览
      :anchor/exit-fit-segment-free-modal  —— release 提交（单击）
 
@@ -11,22 +11,23 @@
     [top.kzre.krro.core.reframe.transaction :as tx :refer [transaction-interceptor]]
     [top.kzre.krro.plugin.painting.core.edit.anchor.state :as anchor.state]
     [top.kzre.krro.plugin.painting.core.edit.interceptors :refer [get-tool-context
-                                                                  tool-context-interceptor]]
+                                                                  tool-context-interceptor update-tool-context]]
     [top.kzre.krro.plugin.painting.core.edit.tool :refer [cleanup-tool-interceptor]]
+    [top.kzre.krro.plugin.painting.core.edit.tool :as tool]
     [top.kzre.krro.plugin.painting.core.store :as store]
     [top.kzre.krro.plugin.painting.core.transactions.anchor-fit-segment-free-modal
      :as anchor-fit-modal])
-  (:import (top.kzre.krro.plugin.painting.core.edit.anchor.state AnchorState)))
+  (:import
+   (top.kzre.krro.plugin.painting.core.edit.anchor.state AnchorState)))
 
-;; 进入段自由拟合模态
-;; 由 :anchor/exit-extrude-anchor-modal 在挤出提交后单独分派——
-;; 事务指令先于 reframe 结果处理执行，同一条事件里 commit + begin 会读到旧 record。
+;; 指定的进入自由拟合，只支持 anchor 触发
+;; anchor 必须是已经创建的锚点
 (rf/reg-event-fx
-  store/app-id :anchor/enter-fit-segment-free-modal
+  store/app-id :anchor-fit-segment-free/trigger
   [(cleanup-tool-interceptor AnchorState :factory (fn [_] (anchor.state/make-state)))
    (tool-context-interceptor)
    (transaction-interceptor)]
-  (fn [cofx [_ _ _ _ anchor point]]
+  (fn [cofx [_ _ _ frame {:keys [anchor]}]]
     (let [{:keys [layer-type transaction-kind]} (get-tool-context cofx)]
       (cond
         (not= :vector layer-type)
@@ -39,14 +40,26 @@
         {:fx [[:warn "Transaction already exists!"]]}
 
         :else
-        {:record (-> (:record cofx)
-                     (assoc-in [ :tool-data :mode]  :fit-segment-free)
-                     (assoc-in [ :tool-data :modal] true))
-         :transaction
-         [(tx/begin-transaction
-            (anchor-fit-modal/kind)
-            :anchor      anchor
-            :layer-event point)]}))))
+        (let [record (:record cofx)
+              ctx (get-tool-context cofx)
+              new-record
+              (-> record
+                  ;; 自动进入选择并激活
+                  (assoc-in [:tool-data :active-anchor] anchor)
+                  (update-in [:tool-data :selected-anchors]
+                             (fn [selected]
+                               (conj (or selected #{}) anchor)))
+                  (assoc-in [:tool-data :mode]  :fit-segment-free)
+                  (assoc-in [:tool-data :modal] true))]
+          {:record new-record
+           :transaction
+           (tx/tx-begin
+             (anchor-fit-modal/kind)
+             {:anchor anchor})
+           :fx [[:tool/flush-overlay
+                 (tool/overlay (get new-record :tool-data)
+                               (update-tool-context ctx new-record))
+                 frame]]})))))
 
 ;; 拟合挤出段 —— move 阶段
 (rf/reg-event-fx

@@ -42,19 +42,19 @@
   tx/ITransaction
   (kind [_] (kind))
 
-  (begin [this {:keys [anchor]} record]
-    {:pre [(some? anchor)]}
-    (let [{:keys [canvas-id layer-id layer]} (record/layer-context record)
+  (begin [this {:keys [^Anchor anchor
+                       segment]} record]
+    ;; 通过边缘顶点指定，或者指定段
+    (let [by-anchor? (some? anchor)
+          by-seg? (and (not by-anchor?)
+                       (some? segment))
+          {:keys [canvas-id layer-id layer]} (record/layer-context record)
           paths   (cv/paths layer)
-          path    (get paths (:path-id anchor))]
+          path-id (:path-id (or anchor segment))
+          path    (get paths path-id)]
       (cond
         (nil? path)
         (do (log/info "fit-segment-free: path not found"
-                      {:canvas-id canvas-id :layer-id layer-id :anchor anchor})
-            [nil {}])
-
-        (not (cv/end-anchor? paths anchor))
-        (do (log/info "fit-segment-free: anchor is not an endpoint"
                       {:canvas-id canvas-id :layer-id layer-id :anchor anchor})
             [nil {}])
 
@@ -65,11 +65,20 @@
                        :path-id   (:path-id anchor)})
             [nil {}])
 
+        ;; 锚点指定只支持端点
+        (and by-anchor?
+             (not (cv/end-anchor? paths anchor)))
+        (do (log/info "fit-segment-free: anchor is not an endpoint"
+                      {:canvas-id canvas-id :layer-id layer-id :anchor anchor})
+            [nil {}])
+
         :else
         [(assoc this
            :layer-backup layer
-           :path-id      (:path-id anchor)
-           :seg-idx      (outer-seg-idx anchor))
+           :path-id      path-id
+           :seg-idx (cond
+                      by-anchor? (outer-seg-idx anchor)
+                      by-seg? (:seg-idx segment)))
          {:fx [[:tool/set-command-enabled false]]}])))
 
   (operate [this op-kind {:keys [layer-event]} record]

@@ -36,10 +36,10 @@
                      (assoc-in [ :tool-data :mode]  :extrude-anchor)
                      (assoc-in [ :tool-data :modal] true))
          :transaction
-         [(tx/begin-transaction
-            (anchor-extrude-modal/kind)
-            :anchor active-anchor
-            :layer-event layer-event)]}))))
+         (tx/tx-begin
+           (anchor-extrude-modal/kind)
+           {:anchor active-anchor
+            :layer-event layer-event})}))))
 
 ;; 挤出顶点 —— move 阶段
 (rf/reg-event-fx
@@ -94,7 +94,6 @@
            (anchor-extrude-modal/kind)
            {:effects
             ;; 延迟到整个事务 oplog 完成触发的副作用
-            {:dispatch [:anchor/enter-fit-segment-free-modal
+            {:dispatch [:anchor-fit-segment-free/trigger
                         record-id event-map frame
-                        (:new-anchor transaction)
-                        (select-keys layer-event [:x :y])]}})}))))
+                        {:anchor (:new-anchor transaction)}]}})}))))

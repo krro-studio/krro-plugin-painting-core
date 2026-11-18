@@ -22,33 +22,6 @@
     [clojure.set :as set]))
 
 
-;; 删除锚点
-(rf/reg-event-fx
-  store/app-id :oplog/anchor-delete
-  (fn [cofx [_ canvas-id layer-id anchors
-             & {:keys [] :as ctx}]]
-    (when (seq anchors)
-      (let [{:keys [layer layer-transform]}
-            (record/layer-context (:record cofx) layer-id)
-            old-paths (cv/paths layer)
-            new-paths
-            (reduce
-              (fn [acc anc]
-                (cv/delete-anchor acc anc))
-              old-paths
-              anchors)
-            path-ids (set (map :path-id anchors))
-            saved-paths (select-keys new-paths path-ids)
-            deleted-ids (set/difference
-                          path-ids
-                          (set (keys saved-paths)))
-            op (change/make-vector-paths-geometry-changed
-                 layer-id old-paths layer-transform
-                 :deleted deleted-ids
-                 :saved  saved-paths)]
-        (log/info "delete paths: " deleted-ids)
-        {:dispatch [:oplog/log canvas-id op ctx]}
-        ))))
 
 
 ;; 移动锚点
@@ -134,13 +107,52 @@
 ;; 拓扑 —— 控制点数量 / 结构变化
 ;; ═══════════════════════════════════════════════
 
+;; 插入锚点
 (rf/reg-event-fx
   store/app-id :oplog/anchor-insert
-  (fn [cofx [_ canvas-id layer-id path-id t & {:as ctx}]]
-    ;; TODO: 调 v/insert-anchor → change/make-vector-anchor-inserted
-    ))
+  (fn [cofx [_ canvas-id layer-id
+             {:keys [path-id t]}
+             {:keys [] :as ctx}]]
+    (let [{:keys [layer layer-transform]}
+          (record/layer-context (:record cofx) layer-id)
+          old-paths (cv/paths layer)
+          new-paths
+          (cv/insert-anchor old-paths path-id t)
+          saved-paths (select-keys new-paths [path-id])
+          op (change/make-vector-paths-geometry-changed
+               layer-id old-paths layer-transform
+               :deleted #{path-id}
+               :saved  saved-paths)]
+      {:dispatch [:oplog/log canvas-id op ctx]}
+      )))
 
 
+;; 删除锚点
+(rf/reg-event-fx
+  store/app-id :oplog/anchor-delete
+  (fn [cofx [_ canvas-id layer-id anchors
+             & {:keys [] :as ctx}]]
+    (when (seq anchors)
+      (let [{:keys [layer layer-transform]}
+            (record/layer-context (:record cofx) layer-id)
+            old-paths (cv/paths layer)
+            new-paths
+            (reduce
+              (fn [acc anc]
+                (cv/delete-anchor acc anc))
+              old-paths
+              anchors)
+            path-ids (set (map :path-id anchors))
+            saved-paths (select-keys new-paths path-ids)
+            deleted-ids (set/difference
+                          path-ids
+                          (set (keys saved-paths)))
+            op (change/make-vector-paths-geometry-changed
+                 layer-id old-paths layer-transform
+                 :deleted deleted-ids
+                 :saved  saved-paths)]
+        {:dispatch [:oplog/log canvas-id op ctx]}
+        ))))
 
 (rf/reg-event-fx
   store/app-id :oplog/anchor-weld
