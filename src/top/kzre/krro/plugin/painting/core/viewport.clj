@@ -51,3 +51,11 @@
         offy (:offset-y vp)]
     (KMath/mat2dCompose (- (* offx zoom)) (- (* offy zoom)) zoom zoom 0)))
 
+(defn viewport->mat2d-invert
+  "视口变换的逆：逻辑屏幕（DIP，y 向下）-> 图像坐标。"
+  [vp]
+  (let [zoom (:zoom vp)
+        offx (:offset-x vp)
+        offy (:offset-y vp)]
+    (KMath/mat2dComposeInverse (- (* offx zoom)) (- (* offy zoom)) zoom zoom 0)))
+

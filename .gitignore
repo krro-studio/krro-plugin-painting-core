@@ -12,3 +12,5 @@ krro-plugin-painting-core.iml
 krro-plugin-painting.iml
 target/
 .nrepl-port
+.clj-kondo
+krro-plugin-paint.iml
