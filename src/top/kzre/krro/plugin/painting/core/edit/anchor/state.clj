@@ -225,3 +225,11 @@
 (defn make-state
   [& {:keys [_mode] :or {}}]
   (map->AnchorState {}))
+
+
+(defn clear-selected-anchors
+  "清空所有锚点选择状态"
+  [state]
+  (assoc state
+    :active-anchor nil
+    :selected-anchors #{}))

@@ -4,8 +4,9 @@
     [top.kzre.krro.core.reframe.core :as rf]
     [top.kzre.krro.plugin.painting.core.edit.anchor.state :as anchor.state ]
     [top.kzre.krro.plugin.painting.core.edit.interceptors :refer [get-tool-context
+                                                                  update-tool-context
                                                                   tool-context-interceptor]]
-    [top.kzre.krro.plugin.painting.core.edit.tool :refer [cleanup-tool-interceptor]]
+    [top.kzre.krro.plugin.painting.core.edit.tool :as tool :refer [cleanup-tool-interceptor]]
     [top.kzre.krro.plugin.painting.core.store :as store])
   (:import
     (top.kzre.krro.plugin.painting.core.edit.anchor.state AnchorState)))
@@ -15,7 +16,7 @@
   store/app-id :anchor-delete/process
   [(cleanup-tool-interceptor AnchorState :factory (fn [_] (anchor.state/make-state)))
    (tool-context-interceptor)]
-  (fn [cofx [_ record-id _event-map _frame]]
+  (fn [cofx [_ record-id _event-map frame]]
     (let [ctx (get-tool-context cofx)
           {:keys [ layer-type layer-id]} ctx
           record (:record cofx)
@@ -26,9 +27,17 @@
         (empty? selected-anchors)
         {:fx [[:warn "No anchor selected"]]}
         :else
-        {:dispatch [:oplog/anchor-delete
+        {:record (->  record
+                      (update :tool-data anchor.state/clear-selected-anchors))
+         :dispatch [:oplog/anchor-delete
                     record-id layer-id selected-anchors
-                    :undo? true]}))))
+                    :undo? true
 
-
-
+                    ;; 延迟到整个oplog流程完成后的副作用
+                    :effects
+                    ;; 闭包
+                    (fn [final-record]
+                      (let [final-ctx (update-tool-context ctx final-record)]
+                        {:fx [[:tool/flush-overlay
+                               (tool/overlay (get final-record :tool-data) final-ctx)
+                               frame]]}))]}))))

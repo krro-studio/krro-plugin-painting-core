@@ -7,8 +7,7 @@
     [top.kzre.krro.plugin.painting.core.layer.clone :as clone]
     [top.kzre.krro.plugin.painting.core.layer.dispose :as dispose]
     [top.kzre.krro.plugin.painting.core.project.canvas :as pc]
-    [top.kzre.krro.plugin.painting.core.schedule.protocol :as proto]
-    [top.kzre.krro.canvas.core.layer.render.download :as download])
+    [top.kzre.krro.plugin.painting.core.schedule.protocol :as proto])
   (:import
     (java.util.concurrent
       Executors

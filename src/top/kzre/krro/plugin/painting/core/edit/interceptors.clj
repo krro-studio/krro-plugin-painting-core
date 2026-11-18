@@ -13,6 +13,24 @@
 (defn get-tool-context [cofx]
   (get cofx :krro.painting/tool-context))
 
+(defn update-tool-context
+  "记录更新，更新上下文"
+  [tool-ctx record]
+  (let [{:keys [layer-id layer-path layer-type layer-visible layer layers canvas-data]}
+        (record/layer-context record)
+        layer-transform-inv (when layer (tool-util/layer-transform-inverse layer layers))
+        layer-transform (when layer-transform-inv (KMath/mat2dInv layer-transform-inv))]
+    (assoc tool-ctx
+      :layer-id            layer-id
+      :layer-path          layer-path
+      :layer-type          layer-type
+      :layer-visible       layer-visible
+      :layer               layer
+      :layer-transform     layer-transform
+      :layer-transform-inv layer-transform-inv
+      :layers              layers
+      :canvas-data         canvas-data)))
+
 (defn tool-context-interceptor
   "为工具事件提供标准化的上下文数据，包括画布、图层、视口和坐标转换。
    将上下文注入到 coeffects 的 :krro.painting/tool-context 键下。"
