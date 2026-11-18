@@ -89,8 +89,12 @@
         {:record (-> (:record cofx)
                      (assoc-in [ :tool-data :mode]  nil)
                      (assoc-in [ :tool-data :modal] false))
-         :transaction [(tx/commit-transaction (anchor-extrude-modal/kind))]
-         :dispatch [:anchor/enter-fit-segment-free-modal
-                    record-id event-map frame
-                    (:new-anchor transaction)
-                    (select-keys layer-event [:x :y])]}))))
+         :transaction
+         (tx/tx-commit
+           (anchor-extrude-modal/kind)
+           {:effects
+            ;; 延迟到整个事务 oplog 完成触发的副作用
+            {:dispatch [:anchor/enter-fit-segment-free-modal
+                        record-id event-map frame
+                        (:new-anchor transaction)
+                        (select-keys layer-event [:x :y])]}})}))))

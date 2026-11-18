@@ -44,7 +44,10 @@
              :last-point (select-keys layer-event [:x :y])
              :changed? true)
            {:dispatch [:oplog/anchor-translate canvas-id layer-id
-                       anchors dx dy :undo? false]}]
+                       {:anchors anchors
+                        :dx dx
+                        :dy dy}
+                       {:undo? false}]}]
           [this {:fx []}]))
       (throw (ex-info "unknown op-kind for transaction anchor-translate"
                       {:op-kind op-kind}))))
@@ -58,9 +61,11 @@
         ;; 落到 paths 上与预览增量同值，不会叠加。
         ;; undo? true 让 op 进入 undo，一次拖动 = 一个 undo 单元。
         {:dispatch [:oplog/anchor-translate canvas-id layer-id
-                    anchors dx dy
-                    :old-paths (cv/paths layer-backup)
-                    :undo? true]
+                    {:anchors anchors
+                     :dx dx
+                     :dy dy
+                     :paths (cv/paths layer-backup)}
+                    {:undo? true}]
          :fx [[:tool/set-command-enabled true]]}
         {:fx [[:tool/set-command-enabled true]]})))
 

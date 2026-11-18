@@ -54,11 +54,13 @@
 ;; 移动锚点
 (rf/reg-event-fx
   store/app-id :oplog/anchor-translate
-  (fn [cofx [_ canvas-id layer-id anchors dx dy
-             & {:keys [old-paths] :as ctx}]]
+  (fn [cofx [_ canvas-id layer-id
+             ;; map 参数会比 kwargs 更好，如果不是用于 dsl 的话
+             {:keys [anchors dx dy paths]}
+             ctx]]
     (let [{:keys [layer layer-transform]}
           (record/layer-context (:record cofx) layer-id)
-          old-paths (or old-paths (cv/paths layer))
+          old-paths (or paths (cv/paths layer))
           new-paths (cv/translate-anchors old-paths anchors dx dy)
           op (apply change/make-vector-anchor-positions-changed
                     layer-id old-paths new-paths layer-transform anchors)]

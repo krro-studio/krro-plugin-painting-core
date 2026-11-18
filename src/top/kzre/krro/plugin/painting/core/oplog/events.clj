@@ -12,7 +12,8 @@
 (rf/reg-event-fx
   store/app-id :oplog/log
   (fn [{:keys [record]}
-       [_ record-id ^IOperation op
+       [_ record-id
+        ^IOperation op
         {:keys [undo? effects]
          :or {undo? false}
          :as ctx}]]
@@ -31,7 +32,9 @@
           (reframe.util/merge-effects
             undo-effects
             ;; 支持延迟求值
-            (if (ifn? effects) (effects new-record) effects))
+            (cond
+              (map? effects) effects
+              (ifn? effects)  (effects new-record)))
           undo-effects))
       (catch Throwable e
         (when (instance? AutoCloseable op)

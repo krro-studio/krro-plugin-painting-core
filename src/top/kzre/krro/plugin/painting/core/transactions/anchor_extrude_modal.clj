@@ -77,20 +77,22 @@
         [(assoc this :last-point (select-keys layer-event [:x :y]))
          {:dispatch [:oplog/anchor-translate
                      canvas-id layer-id
-                     [new-anchor]
-                     dx dy
-                     :undo? false]}])
+                     {:anchors [new-anchor]
+                      :dx dx
+                      :dy dy}
+                     {:undo? false}]}])
       (throw (ex-info "unknown op-kind" {:op-kind op-kind :kind (kind)}))))
 
-  (commit [this _ record]
-    (let [{:keys [canvas-id layer-id]} (record/layer-context record)
-          {new-anchor :new-anchor} this]
+  (commit [_ {:keys [effects]} record]
+    (let [{:keys [canvas-id layer-id]} (record/layer-context record)]
       ;; no-op translate 打 undo 标记——触发 record! 记录整段事务
       {:dispatch [:oplog/anchor-translate
                   canvas-id layer-id
-                  [new-anchor]
-                  0 0
-                  :undo? true]
+                  {:anchors [new-anchor]
+                   :dx  0
+                   :dy 0}
+                  {:undo? true
+                   :effects effects}]
        :fx [[:tool/set-command-enabled true]]}))
 
   (rollback [_ _ record]
