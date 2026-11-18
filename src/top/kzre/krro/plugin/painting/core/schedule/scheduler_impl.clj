@@ -68,7 +68,8 @@
             (assoc :gl-composite-context gl-composite-context)
             (merge (select-keys
                      config
-                     [:backend])))]
+                     ;; :overflow 是关键字契约 :clip / :visible，缺省时由 context/overflow 取默认值
+                     [:backend :overflow])))]
     new-ctx))
 
 (defn diff-state!

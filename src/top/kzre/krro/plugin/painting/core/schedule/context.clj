@@ -13,6 +13,22 @@
     (top.kzre.krro.util.math KMath)))
 
 
+(def ^:private default-overflow
+  "图层盖出图像范围时的默认显示策略。"
+  :visible)
+
+(defn overflow
+  "溢出显示策略——对外契约是关键字 :clip / :visible，
+   枚举只存在于后端内部，由后端自行转换。"
+  [ctx]
+  (or (:overflow ctx) default-overflow))
+
+(defn clip?
+  "是否把内容裁剪到图像范围内。"
+  [ctx]
+  (= :clip (overflow ctx)))
+
+
 (defrecord ContextNode [ctx]
   cg/INode
   (node-id [_] :context)
@@ -118,9 +134,11 @@
         :image-tiles nil))))
 
 (defn- assoc-image-dirty-tiles [ctx _old-ctx]
-  (let [{:keys [view-dirty-tiles tile-size
-                image-aabb]} ctx]
-    (if image-aabb
+  (let [{:keys [view-dirty-tiles tile-size image-aabb]} ctx]
+    ;; 只有 :clip 才把脏瓦片收到图像范围内。
+    ;; :visible 下图像之外的图层内容也要参与合成——
+    ;; 否则那块区域永远刷不出新东西。
+    (if (and image-aabb (clip? ctx))
       (let [image-clipped-dirty-tiles
             (LayerUtils/clipTilesAABB
               view-dirty-tiles tile-size

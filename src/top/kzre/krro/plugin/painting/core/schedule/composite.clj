@@ -50,6 +50,8 @@
            ;; 派生数据也一并这里计算
            :image-aabb image-aabb
            :image-tiles image-tiles
+           ;; 溢出显示策略，关键字契约 :clip / :visible
+           :overflow (context/overflow ctx)
            :merge-fn merge-fn}
           (= :gl backend)
           (assoc :gl-composite-context gl-composite-context))]
