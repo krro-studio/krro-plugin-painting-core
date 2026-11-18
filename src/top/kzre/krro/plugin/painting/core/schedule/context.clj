@@ -15,7 +15,7 @@
 
 (def ^:private default-overflow
   "图层盖出图像范围时的默认显示策略。"
-  :visible)
+  :clip)
 
 (defn overflow
   "溢出显示策略——对外契约是关键字 :clip / :visible，

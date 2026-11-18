@@ -71,14 +71,18 @@
 
   proto/IOperation
   (realize [this record _ctx]
-    (let [{:keys [canvas-id layer layers]} (record/layer-context record layer-id)
+    (let [
+          {:keys [canvas-id layer layers]} (record/layer-context record layer-id)
           old-paths (cv/paths layer)
+          ;; 区分新增和更新，更新不改变 path-order
+          added-ids         (into #{} (remove #(contains? old-paths %)) (keys saved))
+          updated-ids       (into #{} (filter #(contains? old-paths %)) (keys saved))
+
           new-layer (-> layer
                         (cv/delete-paths deleted)
                         (cv/save-paths saved))
           new-paths         (cv/paths new-layer)
-          added-ids         (into #{} (remove #(contains? old-paths %)) (keys saved))
-          updated-ids       (into #{} (filter #(contains? old-paths %)) (keys saved))
+
           quadtree-fx
           (concat
             ;; added —— 插入新子树
@@ -192,11 +196,15 @@
    & {:keys [saved deleted full?]
       :or   {saved {} deleted #{}
              full? false}}]
-  (let [saved-tiles   (into #{} (mapcat pv/path-tiles (vals saved)))
-        deleted-tiles (into #{} (mapcat (fn [id]
-                                          (pv/path-tiles (get old-paths id)))
-                                        deleted))
-        dirty-tiles   (into saved-tiles deleted-tiles)]
+  (let [updated-ids (into (keys saved) deleted)
+        ;; saved 的 新旧范围都要包括
+        saved-tiles   (into #{} (mapcat pv/path-tiles (vals saved)))
+        updated-tiles (into #{} (mapcat (fn [id]
+                                          (if-let [path (get old-paths id)]
+                                            (pv/path-tiles path)
+                                            #{}))
+                                        updated-ids))
+        dirty-tiles   (into saved-tiles updated-tiles)]
     (->VectorPathsGeometryChanged layer-id saved deleted
                                   dirty-tiles dirty-transform full?)))
 

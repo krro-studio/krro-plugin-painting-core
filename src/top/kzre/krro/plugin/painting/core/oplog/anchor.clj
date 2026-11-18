@@ -18,9 +18,77 @@
     [top.kzre.krro.core.reframe.core :as rf]
     [top.kzre.krro.plugin.painting.core.changes.path :as change]
     [top.kzre.krro.plugin.painting.core.record :as record]
-    [top.kzre.krro.plugin.painting.core.store :as store])
-  (:import
-    (top.kzre.krro.canvas.vector.anchor Anchor)))
+    [top.kzre.krro.plugin.painting.core.store :as store]
+    [clojure.set :as set]))
+
+
+;; 删除锚点
+(rf/reg-event-fx
+  store/app-id :oplog/anchor-delete
+  (fn [cofx [_ canvas-id layer-id anchors
+             & {:keys [] :as ctx}]]
+    (when (seq anchors)
+      (let [{:keys [layer layer-transform]}
+            (record/layer-context (:record cofx) layer-id)
+            old-paths (cv/paths layer)
+            new-paths
+            (reduce
+              (fn [acc anc]
+                (cv/delete-anchor acc anc))
+              old-paths
+              anchors)
+            path-ids (set (map :path-id anchors))
+            saved-paths (select-keys new-paths path-ids)
+            deleted-ids (set/difference
+                          path-ids
+                          (set (keys saved-paths)))
+            op (change/make-vector-paths-geometry-changed
+                 layer-id old-paths layer-transform
+                 :deleted deleted-ids
+                 :saved  saved-paths)]
+        (log/info "delete paths: " deleted-ids)
+        {:dispatch [:oplog/log canvas-id op ctx]}
+        ))))
+
+
+;; 移动锚点
+(rf/reg-event-fx
+  store/app-id :oplog/anchor-translate
+  (fn [cofx [_ canvas-id layer-id anchors dx dy
+             & {:keys [old-paths] :as ctx}]]
+    (let [{:keys [layer layer-transform]}
+          (record/layer-context (:record cofx) layer-id)
+          old-paths (or old-paths (cv/paths layer))
+          new-paths (cv/translate-anchors old-paths anchors dx dy)
+          op (apply change/make-vector-anchor-positions-changed
+                    layer-id old-paths new-paths layer-transform anchors)]
+      {:dispatch [:oplog/log canvas-id op ctx]})))
+
+;; 挤出锚点
+(rf/reg-event-fx
+  store/app-id :oplog/anchor-extrude
+  (fn [cofx [_ canvas-id layer-id end-anchor
+             & {:keys [point]
+                :as ctx}]]
+    (let [{:keys [layer layer-transform]} (record/layer-context (:record cofx) layer-id)
+          old-paths (cv/paths layer)
+          new-point (or point (cv/anchor-point old-paths end-anchor))
+          result    (cv/extrude-anchor old-paths end-anchor new-point)]
+      (if result
+        (let [{:keys [paths]} result
+              path-id  (:path-id end-anchor)
+              new-path (get paths path-id)
+              op       (change/make-vector-paths-geometry-changed
+                         layer-id old-paths layer-transform
+                         :saved {path-id new-path})]
+          {:dispatch [:oplog/log canvas-id op ctx]})
+        (do
+          (log/info "anchor-extrude: end-anchor is not an endpoint"
+                    {:canvas-id  canvas-id
+                     :layer-id   layer-id
+                     :end-anchor end-anchor})
+          nil)))))
+
 
 ;; ═══════════════════════════════════════════════
 ;; 几何 —— 锚点位置变化
@@ -70,11 +138,6 @@
     ;; TODO: 调 v/insert-anchor → change/make-vector-anchor-inserted
     ))
 
-(rf/reg-event-fx
-  store/app-id :oplog/anchor-delete
-  (fn [cofx [_ canvas-id layer-id anchor & {:as ctx}]]
-    ;; TODO: 调 v/delete-anchor → change/make-vector-anchor-deleted
-    ))
 
 
 (rf/reg-event-fx

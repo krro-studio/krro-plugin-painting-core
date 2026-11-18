@@ -39,3 +39,14 @@
       (msg/warn "No current frame active")))
   :description "Enter extrude anchor modal (default E key)"
   :interactive true)
+
+(cmd/reg-command
+  :krro.painting/delete-selected-anchors
+  (fn [_]
+    (if-let [frame (kcc/active-frame)]
+      (if-let [canvas-id (frame/param frame spec/canvas-id-key)]
+        (rf/dispatch store/app-id [:anchor-delete/process canvas-id nil frame])
+        (msg/warn "No canvas-id found in current frame"))
+      (msg/warn "No current frame active")))
+  :description "Delete selected anchors"
+  :interactive true)
