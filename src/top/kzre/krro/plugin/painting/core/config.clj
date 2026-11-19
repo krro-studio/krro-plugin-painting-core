@@ -1,5 +1,5 @@
 (ns top.kzre.krro.plugin.painting.core.config
-  "全局配置项表,不用 defcustom, 这个是程序配置")
+  "全局配置项表,不用 defcustom, 这个是程序配置, 配置属于app 数据")
 
 ;; 运行时配置
 (def  ^:dynamic *config* {})

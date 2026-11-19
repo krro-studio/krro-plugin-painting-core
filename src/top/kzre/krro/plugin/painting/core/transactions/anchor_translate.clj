@@ -6,7 +6,6 @@
    commit 时以 layer-backup 为基准再派发一次完整位移（undo? true）合并为单一 undo 单元。
    选择（selected-anchors / active-anchor）是 UI 状态，不进入本事务。"
   (:require
-    [top.kzre.krro.canvas.vector.core :as cv]
     [top.kzre.krro.core.reframe.transaction :as tx]
     [top.kzre.krro.plugin.painting.core.layer.clone :as clone]
     [top.kzre.krro.plugin.painting.core.record :as record]

@@ -79,6 +79,8 @@
         screen-point  (layer-point->screen ctx point)]
     [[:anchor {:x (:x screen-point) :y (:y screen-point) :state st :shape :square}]]))
 
+;; TODO bezier segment 的轴线显示
+;; TODO handle 选择的显示逻辑
 (defn- describe-bezier-handle
   "贝塞尔控制手柄：锚点 → 入/出控制点的引线 + 小圆。
    使用 overlay 的 :handle 描述项，端点样式 (:in/:out 差异) 由下层处理。"

@@ -87,8 +87,8 @@
 
         :else
         {:record (-> (:record cofx)
-                     (assoc-in [ :tool-data :mode]  nil)
-                     (assoc-in [ :tool-data :modal] false))
+                     (assoc-in [:tool-data :mode]  nil)
+                     (assoc-in [:tool-data :modal] false))
          :transaction
          (tx/tx-commit
            (anchor-extrude-modal/kind)

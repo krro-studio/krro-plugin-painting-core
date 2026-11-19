@@ -18,7 +18,7 @@
    (top.kzre.krro.plugin.painting.core.edit.anchor.state AnchorState)))
 
 ;; ─── 内部：计算屏幕距离 ───
-
+;; 衰减编辑能编辑所有类型的宽度，普通编辑只能编辑 fixed 和 point-width
 (defn- screen-distance
   [paths anchor layer-transform viewport event]
   (let [pt        (cv/anchor-point paths anchor)

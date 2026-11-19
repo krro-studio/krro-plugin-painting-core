@@ -31,7 +31,7 @@
         {:fx [[:warn "No anchor selected"]]}
         :else
         {:record (->  record
-                      (update :tool-data anchor.state/clear-selected-anchors))
+                      (update :tool-data anchor.state/clear-selection))
          :dispatch [:oplog/anchor-delete
                     record-id layer-id selected-anchors
                     :undo? true
@@ -62,7 +62,7 @@
         {:fx [[:warn "No anchor selected"]]}
         :else
         {:record (->  record
-                      (update :tool-data anchor.state/clear-selected-anchors))
+                      (update :tool-data anchor.state/clear-selection))
          :dispatch [:oplog/anchor-delete
                     record-id layer-id selected-anchors
                     :undo? true

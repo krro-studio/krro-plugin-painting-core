@@ -19,7 +19,8 @@
     [top.kzre.krro.plugin.painting.core.changes.path :as change]
     [top.kzre.krro.plugin.painting.core.record :as record]
     [top.kzre.krro.plugin.painting.core.store :as store]
-    [clojure.set :as set]))
+    [clojure.set :as set]
+    [top.kzre.krro.canvas.vector.bezier.handle :as bezier.handle]))
 
 
 
@@ -160,3 +161,20 @@
     ;; TODO: 调 v/weld-anchors → change/make-vector-anchor-positions-changed
     ;;                              或 change/make-vector-paths-geometry-changed（跨路径）
     ))
+
+
+(rf/reg-event-fx
+  store/app-id :oplog/anchor-translate-handle
+  (fn [cofx [_ canvas-id layer-id
+             ;; map 参数会比 kwargs 更好，如果不是用于 dsl 的话
+             {:keys [handles dx dy paths]}
+             ctx]]
+    (let [{:keys [layer layer-transform]}
+          (record/layer-context (:record cofx) layer-id)
+          old-paths (or paths (cv/paths layer))
+          new-paths (bezier.handle/translate-handles old-paths handles dx dy)
+          ;; anchor 的更新同时包括 anchor+handle
+          anchors (set (map :anchor handles))
+          op (apply change/make-vector-anchor-positions-changed
+                    layer-id old-paths new-paths layer-transform anchors)]
+      {:dispatch [:oplog/log canvas-id op ctx]})))
