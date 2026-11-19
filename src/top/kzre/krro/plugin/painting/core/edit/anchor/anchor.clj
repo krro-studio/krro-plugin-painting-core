@@ -55,7 +55,6 @@
                (tool/overlay (get-in (:record cofx) [:tool-data]) ctx)
                frame]]}))))
 
-;; TODO 这里加速结构维护失败
 (rf/reg-event-fx
   store/app-id :anchor-translate/release
   [(cleanup-tool-interceptor AnchorState :factory (fn [_] (anchor.state/make-state)))
@@ -75,7 +74,9 @@
         (= transaction-kind (tx-anchor-translate/kind))
         (let [record (:record cofx)
               tool-data (get-in record [:tool-data])]
-          {:fx [[:tool/flush-overlay (tool/overlay tool-data ctx) frame]]})
+          {:transaction (tx/tx-commit (tx-anchor-translate/kind)
+                                      {})
+           :fx [[:tool/flush-overlay (tool/overlay tool-data ctx) frame]]})
 
         ;; 其他事务中，忽略
         (some? transaction-kind)

@@ -5,7 +5,7 @@ all: jar install
 clean:
 	clj -T:build clean
 
-jar: clean
+jar:
 	clj -T:build jar
 
 install: jar

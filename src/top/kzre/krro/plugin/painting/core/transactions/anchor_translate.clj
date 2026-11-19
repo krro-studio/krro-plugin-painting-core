@@ -53,18 +53,11 @@
                       {:op-kind op-kind}))))
 
   (commit [_ _ record]
-    (let [{:keys [canvas-id layer-id]} (record/layer-context record)
-          dx (- (:x last-point) (:x init-point))
-          dy (- (:y last-point) (:y init-point))]
-      (if (and changed? (seq anchors) (or (not (zero? dx)) (not (zero? dy))))
-        ;; old-paths 取 layer-backup——基准是拖动前的 paths，位移结果是绝对值，
-        ;; 落到 paths 上与预览增量同值，不会叠加。
-        ;; undo? true 让 op 进入 undo，一次拖动 = 一个 undo 单元。
+    (let [{:keys [canvas-id layer-id]} (record/layer-context record)]
+      (if (and changed? (seq anchors))
+        ;; 使用积累状态更新， 因为quadtree 需要这个来辅助删除，缺少这个会进入暴力遍历
         {:dispatch [:oplog/anchor-translate canvas-id layer-id
-                    {:anchors anchors
-                     :dx dx
-                     :dy dy
-                     :paths (cv/paths layer-backup)}
+                    {:anchors anchors :dx 0 :dy 0}
                     {:undo? true}]
          :fx [[:tool/set-command-enabled true]]}
         {:fx [[:tool/set-command-enabled true]]})))
