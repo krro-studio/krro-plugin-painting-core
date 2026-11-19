@@ -7,19 +7,21 @@
    [top.kzre.krro.plugin.painting.core.edit.anchor.state :as anchor.state]
    [top.kzre.krro.plugin.painting.core.edit.common :as common]
    [top.kzre.krro.plugin.painting.core.edit.interceptors :refer [tool-context-interceptor]]
+   [top.kzre.krro.canvas.vector.bezier.handle]
    [top.kzre.krro.plugin.painting.core.edit.tool :as tool :refer [cleanup-tool-interceptor]]
    [top.kzre.krro.plugin.painting.core.store :as store]
    [top.kzre.krro.plugin.painting.core.transactions.anchor-translate :as tx-anchor-translate])
   (:import
     (top.kzre.krro.canvas.core QuadTree QuadTree$NearestResult)
     (top.kzre.krro.canvas.vector.anchor Anchor)
+    (top.kzre.krro.canvas.vector.bezier.handle Handle)
     (top.kzre.krro.plugin.painting.core.edit.anchor.state AnchorState)))
 
 ;; press 无法判定本次手势是选择还是位移，保持空逻辑。
 ;; drag 首帧（无事务）起事务并把本帧作为 init-point，后续帧执行事务操作，
 ;; release 提交事务打 undo 标记。选择等 UI 状态留在本 ns，
 ;; 几何改动与 quadtree 维护由事务经 oplog 完成。
-
+;; TODO 控制柄拖动状态事务里，无需跨事务，就不用放在工具状态里
 (rf/reg-event-fx
   store/app-id :anchor-translate/press
   [(cleanup-tool-interceptor AnchorState :factory (fn [_] (anchor.state/make-state)))
@@ -111,6 +113,8 @@
                                       :active-anchor closest)]
                   {:record (assoc-in record [:tool-data] new-tool-data)
                    :fx [[:tool/flush-overlay (tool/overlay new-tool-data ctx) frame]]})
+                (instance? Handle closest)
+                {:fx [[:warn "click bezier handle"]]}
                 ))
 
             ;; 没选中

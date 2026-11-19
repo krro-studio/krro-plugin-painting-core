@@ -2,32 +2,47 @@
   (:require
     [top.kzre.krro.canvas.core.layer.util :as util]
     [top.kzre.krro.core.reframe.core :as rf]
-    [top.kzre.krro.plugin.painting.core.algo.anchor-quadtree :as anchor-quadtree]
-    [top.kzre.krro.plugin.painting.core.store :as store]))
+    [top.kzre.krro.plugin.painting.core.algo.anchor-quadtree :as algo]
+    [top.kzre.krro.plugin.painting.core.store :as store])
+  (:import (top.kzre.krro.canvas.core QuadTree RectQuadTree)))
 
-;; 锚点四叉树加速结构
-;; 存储形态：{canvas-id {:layer-id <layer-id> :tree <quadtree>}}
+;; ========== 存储 ==========
+;; 形态：{:canvas-id {:layer-id <layer-id>
+;;                    :tree <QuadTree>
+;;                    :rect-tree <RectQuadTree>}}
+
 (defonce anchor-quadtrees (atom {}))
 
 (defn tree
-  "获取 canvas-id 对应的锚点四叉树对象。不存在返回 nil。"
+  "获取 canvas-id 对应的锚点四叉树。不存在返回 nil。"
   [canvas-id]
   (:tree (get @anchor-quadtrees canvas-id)))
 
-(defn close [canvas-id]
+(defn close
+  [canvas-id]
   (swap! anchor-quadtrees dissoc canvas-id))
 
+;; ========== 宏 ==========
+
 (defmacro quadtree-fn
-  "获取 canvas-id 对应的四叉树，若存在则调用 fn-sym，并将 tree 作为第一个参数插入。"
+  "获取 canvas-id 对应的两棵四叉树，若存在则调用 fn-sym，
+   并将 tree 和 rect-tree 作为前两个参数插入。"
   [canvas-id fn-sym & args]
   `(when-let [entry# (get @anchor-quadtrees ~canvas-id)]
      (when-let [~'tree (:tree entry#)]
-       (~fn-sym ~'tree ~@args))))
+       (when-let [~'rect-tree (:rect-tree entry#)]
+         (~fn-sym ~'tree ~'rect-tree ~@args)))))
+
+;; ========== 构建 ==========
 
 (defn- build-for-layer
   [layer]
   (when (= :vector (:type layer))
-    (anchor-quadtree/build-anchor-quadtree (:paths layer))))
+    (let [paths (:paths layer)]
+      [(algo/build-anchor-quadtree paths)
+       (algo/build-segment-quadtree paths)])))
+
+;; ========== Interceptor ==========
 
 (defn anchor-quadtree-interceptor
   "确保 anchor-quadtree 存在且与当前图层一致。
@@ -40,43 +55,64 @@
          (when-let [current-layer-id (:current-layer-id canvas-data)]
            (let [layers (:layers canvas-data)
                  entry  (get @anchor-quadtrees canvas-id)]
-             ;; 图层不一致——重建
              (if (not= (:layer-id entry) current-layer-id)
+               ;; 图层切换 → 重建
                (when-let [layer (util/find-layer current-layer-id layers)]
-                 (when-let [tree (build-for-layer layer)]
+                 (when-let [[tree rect-tree] (build-for-layer layer)]
                    (swap! anchor-quadtrees assoc canvas-id
-                          {:layer-id current-layer-id
-                           :tree     tree})))
-               ;; 图层一致——检查 tree 是否存在（比如首次构建时 layer 不是 vector）
+                          {:layer-id  current-layer-id
+                           :tree      tree
+                           :rect-tree rect-tree})))
+               ;; 图层一致但树为空
                (when (nil? (:tree entry))
                  (when-let [layer (util/find-layer current-layer-id layers)]
-                   (when-let [tree (build-for-layer layer)]
+                   (when-let [[tree rect-tree] (build-for-layer layer)]
                      (swap! anchor-quadtrees assoc canvas-id
-                            {:layer-id current-layer-id
-                             :tree     tree})))))))))
+                            {:layer-id  current-layer-id
+                             :tree      tree
+                             :rect-tree rect-tree})))))))))
      context)})
 
-;; TODO rect考虑宽度误差
-;; TODO 控制柄也加入加速查找池里
+;; ========== 对外 API：锚点操作（同时驱动段树） ==========
+
 (defn update-anchors!
   [canvas-id old-paths new-paths anchors]
-  (quadtree-fn canvas-id anchor-quadtree/update-anchors! old-paths new-paths anchors))
+  (quadtree-fn canvas-id algo/update-anchors! old-paths new-paths anchors))
 
 (defn delete-anchors!
   [canvas-id paths anchors]
-  (quadtree-fn canvas-id anchor-quadtree/delete-anchors! paths anchors))
+  (quadtree-fn canvas-id algo/delete-anchors! paths anchors))
 
 (defn insert-anchors!
   [canvas-id paths anchors]
-  (quadtree-fn canvas-id anchor-quadtree/insert-anchors! paths anchors))
+  (quadtree-fn canvas-id algo/insert-anchors! paths anchors))
 
 (defn delete-path!
   [canvas-id paths path-id]
-  (quadtree-fn canvas-id anchor-quadtree/delete-path! paths path-id))
+  (quadtree-fn canvas-id algo/delete-path-anchors! paths path-id))
 
 (defn insert-path!
   [canvas-id paths path-id]
-  (quadtree-fn canvas-id anchor-quadtree/insert-path! paths path-id))
+  (quadtree-fn canvas-id algo/insert-path-anchors! paths path-id))
+
+;; ========== 对外 API：段级批量操作（唯一直接段入口） ==========
+
+(defn update-segments!
+  [canvas-id old-paths new-paths ops]
+  (quadtree-fn canvas-id algo/update-segments! old-paths new-paths ops))
+
+;; ========== 重建 ==========
+
+(defn rebuild!
+  [canvas-id layer-id paths]
+  (let [tree (algo/build-anchor-quadtree paths)
+        rect-tree (algo/build-segment-quadtree paths)]
+    (swap! anchor-quadtrees assoc canvas-id
+           {:layer-id  layer-id
+            :tree      tree
+            :rect-tree rect-tree})))
+
+;; ========== reframe fx 注册 ==========
 
 (rf/reg-fx
   store/app-id :anchor-quadtree/update-anchors
@@ -104,12 +140,14 @@
     (delete-path! record-id paths path-id)))
 
 (rf/reg-fx
+  store/app-id :anchor-quadtree/update-segments
+  (fn [_ record-id old-paths new-paths ops]
+    (update-segments! record-id old-paths new-paths ops)))
+
+(rf/reg-fx
   store/app-id :anchor-quadtree/rebuild
   (fn [_ record-id layer-id paths]
-    (let [tree (anchor-quadtree/build-anchor-quadtree paths)]
-      (swap! anchor-quadtrees assoc record-id
-             {:layer-id layer-id
-              :tree     tree}))))
+    (rebuild! record-id layer-id paths)))
 
 (rf/reg-fx
   store/app-id :anchor-quadtree/close
