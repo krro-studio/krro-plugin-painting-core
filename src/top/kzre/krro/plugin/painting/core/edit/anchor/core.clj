@@ -7,4 +7,5 @@
     [top.kzre.krro.plugin.painting.core.edit.anchor.width-adjust-modal]
     [top.kzre.krro.plugin.painting.core.edit.anchor.anchor-extrude-modal]
     [top.kzre.krro.plugin.painting.core.edit.anchor.fit-segment-free-modal]
+    [top.kzre.krro.plugin.painting.core.edit.anchor.new-path]
     [top.kzre.krro.plugin.painting.core.edit.anchor.commands]))

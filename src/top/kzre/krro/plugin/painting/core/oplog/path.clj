@@ -11,21 +11,21 @@
    所有几何变化统一走 make-vector-paths-geometry-changed——
    save 语义 + :saved / :deleted 集合。"
   (:require
-    [top.kzre.krro.core.reframe.core :as rf]
-    [top.kzre.krro.plugin.painting.core.changes.path :as change]
-    [top.kzre.krro.plugin.painting.core.project.vector-layer :as pv]
-    [top.kzre.krro.plugin.painting.core.record :as record]
-    [top.kzre.krro.plugin.painting.core.store :as store]))
+   [top.kzre.krro.canvas.vector.core :as cv]
+   [top.kzre.krro.core.reframe.core :as rf]
+   [top.kzre.krro.plugin.painting.core.changes.path :as change]
+   [top.kzre.krro.plugin.painting.core.project.vector-layer :as pv]
+   [top.kzre.krro.plugin.painting.core.record :as record]
+   [top.kzre.krro.plugin.painting.core.store :as store]))
 
 (rf/reg-event-fx
   store/app-id :oplog/vector-path-saved
-  (fn [cofx [_ canvas-id layer-id path-id path & {:as ctx}]]
+  (fn [cofx [_ canvas-id layer-id path-id path {:as ctx}]]
     (let [{:keys [layer layer-transform]} (record/layer-context (:record cofx) layer-id)
-          old-paths (pv/paths layer)
-          new-paths (assoc old-paths path-id path)
+          old-paths (cv/paths layer)
           op        (change/make-vector-paths-geometry-changed
-                      layer-id old-paths new-paths layer-transform
-                      :saved #{path-id})]
+                      layer-id old-paths layer-transform
+                      :saved {path-id path})]
       {:dispatch [:oplog/log canvas-id op ctx]})))
 
 (rf/reg-event-fx

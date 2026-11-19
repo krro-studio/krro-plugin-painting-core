@@ -46,11 +46,14 @@
     :release :fill-tool/release
     nil))
 
-;; 锚点拖动为固定分派
+;; 锚点拖动为固定分派 :new-path/bezier
 (defmethod dispatch/tool-event :anchor
-  [_ event-map]
-  (case (:type event-map)
-    :press :anchor-translate/press
+  [_ {:keys [type modifiers] :as event-map}]
+  (case type
+    :press
+    (if (:ctrl modifiers)
+      :anchor-new-path/bezier
+     :anchor-translate/press)
     :drag :anchor-translate/drag
     :release :anchor-translate/release
     nil))
