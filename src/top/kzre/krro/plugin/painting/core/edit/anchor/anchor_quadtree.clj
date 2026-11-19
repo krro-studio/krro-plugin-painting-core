@@ -56,6 +56,8 @@
                              :tree     tree})))))))))
      context)})
 
+;; TODO rect考虑宽度误差
+;; TODO 控制柄也加入加速查找池里
 (defn update-anchors!
   [canvas-id old-paths new-paths anchors]
   (quadtree-fn canvas-id anchor-quadtree/update-anchors! old-paths new-paths anchors))

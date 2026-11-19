@@ -1,16 +1,18 @@
 (ns top.kzre.krro.plugin.painting.core.edit.anchor.anchor
   (:require
-    [top.kzre.krro.core.reframe.core :as rf]
-    [top.kzre.krro.core.reframe.transaction :as tx :refer [transaction-interceptor]]
-    [top.kzre.krro.plugin.painting.core.edit.anchor.anchor-quadtree :as tree :refer [anchor-quadtree-interceptor]]
-    [top.kzre.krro.plugin.painting.core.edit.anchor.state :as anchor.state]
-    [top.kzre.krro.plugin.painting.core.edit.common :as common]
-    [top.kzre.krro.plugin.painting.core.edit.interceptors :refer [tool-context-interceptor]]
-    [top.kzre.krro.plugin.painting.core.edit.tool :as tool :refer [cleanup-tool-interceptor]]
-    [top.kzre.krro.plugin.painting.core.store :as store]
-    [top.kzre.krro.plugin.painting.core.transactions.anchor-translate :as tx-anchor-translate])
+   [top.kzre.krro.canvas.vector.anchor]
+   [top.kzre.krro.core.reframe.core :as rf]
+   [top.kzre.krro.core.reframe.transaction :as tx :refer [transaction-interceptor]]
+   [top.kzre.krro.plugin.painting.core.edit.anchor.anchor-quadtree :as tree :refer [anchor-quadtree-interceptor]]
+   [top.kzre.krro.plugin.painting.core.edit.anchor.state :as anchor.state]
+   [top.kzre.krro.plugin.painting.core.edit.common :as common]
+   [top.kzre.krro.plugin.painting.core.edit.interceptors :refer [tool-context-interceptor]]
+   [top.kzre.krro.plugin.painting.core.edit.tool :as tool :refer [cleanup-tool-interceptor]]
+   [top.kzre.krro.plugin.painting.core.store :as store]
+   [top.kzre.krro.plugin.painting.core.transactions.anchor-translate :as tx-anchor-translate])
   (:import
     (top.kzre.krro.canvas.core QuadTree QuadTree$NearestResult)
+    (top.kzre.krro.canvas.vector.anchor Anchor)
     (top.kzre.krro.plugin.painting.core.edit.anchor.state AnchorState)))
 
 ;; press 无法判定本次手势是选择还是位移，保持空逻辑。
@@ -53,6 +55,7 @@
                (tool/overlay (get-in (:record cofx) [:tool-data]) ctx)
                frame]]}))))
 
+;; TODO 这里加速结构维护失败
 (rf/reg-event-fx
   store/app-id :anchor-translate/release
   [(cleanup-tool-interceptor AnchorState :factory (fn [_] (anchor.state/make-state)))
@@ -63,44 +66,65 @@
     (let [ctx (:krro.painting/tool-context cofx)
           {:keys [click-count layer-event layer-type layer-transform viewport
                   transaction-kind]} ctx]
-      (if-not (= :vector layer-type)
+      (cond
+        ;; 图层非法
+        (not= :vector layer-type)
         {:fx [[:warn (str "Anchor tool is invalid for" layer-type)]]}
+
+        ;; 单锚点拖动事务提交
+        (= transaction-kind (tx-anchor-translate/kind))
+        (let [record (:record cofx)
+              tool-data (get-in record [:tool-data])]
+          {:fx [[:tool/flush-overlay (tool/overlay tool-data ctx) frame]]})
+
+        ;; 其他事务中，忽略
+        (some? transaction-kind)
+        nil
+
+        ;; 单击选择 (顶点/手柄)
+        (= 1 click-count)
         (let [record (:record cofx)
               tool-data (get-in record [:tool-data])
               selected-set (:selected-anchors tool-data #{})
-              shift? (get-in event-map [:modifiers :shift] false)
+              multi-select? (get-in event-map [:modifiers :shift] false)
               threshold 10.0
-              selection
-              (when (= 1 click-count)
-                (let [^QuadTree tree (tree/tree record-id)
-                      ^QuadTree$NearestResult result (.nearest tree (:x layer-event) (:y layer-event))]
-                  (if (and result
-                           (let [screen-pos (common/layer-point->screen
-                                               {:x (.-x result)
-                                                :y (.-y result)}
-                                               layer-transform viewport)
-                                 dist (Math/hypot (- (:x screen-pos) (:x event-map))
-                                                  (- (:y screen-pos) (:y event-map)))]
-                             (< dist threshold)))
-                    (let [closest-anchor (.-value result)
-                          new-selected (if shift?
-                                         (conj selected-set closest-anchor)
-                                         #{closest-anchor})
-                          new-tool-data (assoc tool-data
-                                          :selected-anchors new-selected
-                                          :active-anchor closest-anchor)]
-                      {:record (assoc-in record [:tool-data] new-tool-data)
-                       :fx [[:tool/flush-overlay (tool/overlay new-tool-data ctx) frame]]})
-                    (if shift?
-                      {:record record
-                       :fx [[:tool/flush-overlay (tool/overlay tool-data ctx) frame]]}
-                      (let [new-tool-data (assoc tool-data
-                                           :selected-anchors #{}
-                                           :active-anchor nil)]
-                        {:record (assoc-in record [:tool-data] new-tool-data)
-                         :fx [[:tool/flush-overlay (tool/overlay new-tool-data ctx) frame]]})))))
-              effects (or selection {})]
-          ;; 位移手势结束——提交事务，由事务派发 undo? true
-          (if (= transaction-kind (tx-anchor-translate/kind))
-            (assoc effects :transaction [(tx/commit-transaction (tx-anchor-translate/kind))])
-            effects))))))
+              ^QuadTree tree (tree/tree record-id)
+              ^QuadTree$NearestResult result (.nearest tree (:x layer-event) (:y layer-event))]
+          (if (and result
+                   (let [screen-pos (common/layer-point->screen
+                                      {:x (.-x result)
+                                       :y (.-y result)}
+                                      layer-transform viewport)
+                         dist (Math/hypot (- (:x screen-pos) (:x event-map))
+                                          (- (:y screen-pos) (:y event-map)))]
+                     (< dist threshold)))
+            (let [closest (.-value result)]
+              (cond
+                (instance? Anchor closest)
+                (let [closest (.-value result)
+                      new-selected (if multi-select?
+                                     (conj selected-set closest)
+                                     #{closest})
+                      new-tool-data (assoc tool-data
+                                      :selected-anchors new-selected
+                                      :active-anchor closest)]
+                  {:record (assoc-in record [:tool-data] new-tool-data)
+                   :fx [[:tool/flush-overlay (tool/overlay new-tool-data ctx) frame]]})
+                ))
+
+            ;; 没选中
+            (if multi-select?
+              ;; 加选保持
+              {:fx [[:tool/flush-overlay (tool/overlay tool-data ctx) frame]]}
+              ;; 否则清空选择
+              (let [new-tool-data (assoc tool-data
+                                    :selected-anchors #{}
+                                    :active-anchor nil
+                                    ;:active-handle nil
+                                    ;:selected-handles nil
+                                    )]
+                {:record (assoc-in record [:tool-data] new-tool-data)
+                 :fx [[:tool/flush-overlay (tool/overlay new-tool-data ctx) frame]]}))))
+
+        ;; 位置情况
+        :else nil))))
