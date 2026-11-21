@@ -159,7 +159,7 @@
                 (and (instance? Handle closest)
                      (or (not multi-select?)
                          (or (nil? el-type)
-                             (= el-type :anchor))))
+                             (= el-type :handle))))
                 (let [selected (:selected-handles tool-data #{})
                       new-selected (if multi-select?
                                      (conj selected closest)

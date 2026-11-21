@@ -10,6 +10,7 @@
     [top.kzre.krro.plugin.painting.core.transactions.anchor-extrude-modal :as anchor-extrude-modal])
   (:import (top.kzre.krro.plugin.painting.core.edit.anchor.state AnchorState)))
 
+;; TODO FIX 挤出的时候需要尊重原本的手柄
 ;; 进入顶点挤出模态
 (rf/reg-event-fx
   store/app-id :anchor/enter-extrude-anchor-modal

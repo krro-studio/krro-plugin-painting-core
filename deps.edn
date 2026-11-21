@@ -17,6 +17,16 @@
         top.kzre/krro-canvas-perspective {:mvn/version "0.1.0"}
         top.kzre/krro-canvas-gl {:mvn/version "0.1.0"}
 
+        ;; 图像IO支持
+        com.twelvemonkeys.imageio/imageio-core {:mvn/version "3.15.3"}
+        com.twelvemonkeys.imageio/imageio-metadata {:mvn/version "3.15.3"}
+        com.twelvemonkeys.imageio/imageio-tiff {:mvn/version "3.15.3"}   ; TIFF / BigTIFF
+        com.twelvemonkeys.imageio/imageio-jpeg {:mvn/version "3.15.3"}   ; JPEG（比 JDK 内置支持更广）
+        com.twelvemonkeys.imageio/imageio-bmp  {:mvn/version "3.15.3"}
+        com.twelvemonkeys.imageio/imageio-pnm  {:mvn/version "3.15.3"}   ; PPM/PGM/PBM
+        com.twelvemonkeys.imageio/imageio-psd  {:mvn/version "3.15.3"}   ; PSD 读取
+        com.twelvemonkeys.imageio/imageio-webp {:mvn/version "3.15.3"}   ; WebP 读取
+        com.twelvemonkeys.imageio/imageio-hdr  {:mvn/version "3.15.3"}   ; RGBE/HDR
 
         com.taoensso/timbre {:mvn/version "6.3.1"}
         com.taoensso/tufte {:mvn/version "2.6.3"}

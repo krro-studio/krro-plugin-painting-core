@@ -20,6 +20,7 @@
   (:import
    (top.kzre.krro.plugin.painting.core.edit.anchor.state AnchorState)))
 
+;; TODO 加速结构必须跟随更新
 ;; 指定的进入自由拟合，只支持 anchor 触发
 ;; anchor 必须是已经创建的锚点
 (rf/reg-event-fx

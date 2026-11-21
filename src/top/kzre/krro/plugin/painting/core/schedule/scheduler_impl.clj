@@ -19,7 +19,7 @@
     (top.kzre.krro.canvas.gl.tile GLAtlas)
     (top.kzre.krro.core.util.computing_graph ComputingGraph)
     (top.kzre.krro.util.tile TiledCanvas)))
-
+;; TODO 调度器性能监控，到底哪里产生了热点
 (defrecord SchedulerState [^ComputingGraph graph
                            layers
                            context

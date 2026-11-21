@@ -18,9 +18,7 @@
     (top.kzre.krro.canvas.vector.bezier.handle Handle)
     (top.kzre.krro.canvas.vector.path Segment)))
 
-;; ══════════════════════════════════════════════════════════════════════
-;; 5. Record + 协议方法
-;; ══════════════════════════════════════════════════════════════════════
+(declare selected-element-type)
 
 (defrecord AnchorState
   [

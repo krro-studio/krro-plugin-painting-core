@@ -50,3 +50,14 @@
       (msg/warn "No current frame active")))
   :description "Delete selected anchors"
   :interactive true)
+
+(cmd/reg-command
+  :krro.painting/split-in-active-anchor
+  (fn [_]
+    (if-let [frame (kcc/active-frame)]
+      (if-let [canvas-id (frame/param frame spec/canvas-id-key)]
+        (rf/dispatch store/app-id [:anchor-split/process canvas-id nil frame])
+        (msg/warn "No canvas-id found in current frame"))
+      (msg/warn "No current frame active")))
+  :description "Split path from active anchor"
+  :interactive true)

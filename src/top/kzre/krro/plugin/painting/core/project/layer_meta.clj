@@ -1,4 +1,5 @@
 (ns top.kzre.krro.plugin.painting.core.project.layer-meta
+  "废弃，直接融合进 layers数据中"
   (:require
     [top.kzre.krro.canvas.core.layer.core :as lc]
     [top.kzre.krro.core.core :as kcc]

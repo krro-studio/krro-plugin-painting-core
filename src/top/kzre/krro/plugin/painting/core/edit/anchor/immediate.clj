@@ -75,3 +75,34 @@
                         {:fx [[:tool/flush-overlay
                                (tool/overlay (get final-record :tool-data) final-ctx)
                                frame]]}))]}))))
+
+;; 从活动锚点处断开曲线
+(rf/reg-event-fx
+  store/app-id :anchor-split/process
+  [(cleanup-tool-interceptor AnchorState :factory (fn [_] (anchor.state/make-state)))
+   (tool-context-interceptor)]
+  (fn [cofx [_ record-id _event-map frame]]
+    (let [ctx (get-tool-context cofx)
+          {:keys [ layer-type layer-id]} ctx
+          record (:record cofx)
+          selected-anchors (get-in record [:tool-data :selected-anchors])]
+      (cond
+        (not= :vector layer-type)
+        {:fx [[:warn (str "Anchor tool is invalid for " layer-type)]]}
+        (empty? selected-anchors)
+        {:fx [[:warn "No anchor selected"]]}
+        :else
+        {:record (->  record
+                      (update :tool-data anchor.state/clear-selection))
+         :dispatch [:oplog/anchor-delete
+                    record-id layer-id selected-anchors
+                    :undo? true
+
+                    ;; 延迟到整个oplog流程完成后的副作用
+                    :effects
+                    ;; 闭包
+                    (fn [final-record]
+                      (let [final-ctx (update-tool-context ctx final-record)]
+                        {:fx [[:tool/flush-overlay
+                               (tool/overlay (get final-record :tool-data) final-ctx)
+                               frame]]}))]}))))
