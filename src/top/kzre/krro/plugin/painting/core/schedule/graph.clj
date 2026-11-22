@@ -1,5 +1,6 @@
 (ns top.kzre.krro.plugin.painting.core.schedule.graph
   (:require
+    [taoensso.tufte :as p]
     [top.kzre.krro.canvas.core.layer.group :as group]
     [top.kzre.krro.canvas.core.layer.path :as path]
     [top.kzre.krro.canvas.core.layer.util :as util]
@@ -244,19 +245,24 @@
   [layers
    scheduler
    {:keys [view-matrix current-layer-id] :as ctx}]
-  (let [ctx-node     (context/make-context-node ctx)
-        composed     (schedule.util/compose-transform layers view-matrix)
-        throughed    (pass-though composed)
-        current-path (when current-layer-id
-                       (path/get-path throughed current-layer-id))
-        {:keys [nodes root above-nodes]} (build-level throughed current-path ctx)
-        {recv-nodes :nodes
-         recv-root  :root}
-        (build-receiver root scheduler ctx)
-        result-node  (result/make-result-node recv-root)
-        all-nodes (into [ctx-node result-node] (concat nodes recv-nodes))]
-    {:graph       (apply cg/graph all-nodes)
-     :above-nodes above-nodes}))
+  (p/profile
+    {:id :krro.painting/schedule-build-graph}
+    (p/p
+      :build-graph
+      (let [ctx-node     (context/make-context-node ctx)
+            composed     (schedule.util/compose-transform layers view-matrix)
+            throughed    (pass-though composed)
+            current-path (when current-layer-id
+                           (path/get-path throughed current-layer-id))
+            {:keys [nodes root above-nodes]} (build-level throughed current-path ctx)
+            {recv-nodes :nodes
+             recv-root  :root}
+            (build-receiver root scheduler ctx)
+            result-node  (result/make-result-node recv-root)
+            all-nodes (into [ctx-node result-node] (concat nodes recv-nodes))]
+        {:graph       (apply cg/graph all-nodes)
+         :above-nodes above-nodes})))
+  )
 
 
 (defrecord RenderGraphDiff []

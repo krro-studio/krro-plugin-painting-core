@@ -12,7 +12,8 @@
    [top.kzre.krro.plugin.painting.core.schedule.layer-impl]
    [top.kzre.krro.plugin.painting.core.schedule.protocol :as proto]
    [top.kzre.krro.plugin.painting.core.schedule.result :as result]
-   [top.kzre.krro.plugin.painting.core.schedule.util :as util])
+   [top.kzre.krro.plugin.painting.core.schedule.util :as util]
+   [taoensso.tufte :as p])
   (:import
     (java.lang AutoCloseable)
     (top.kzre.colorutils.color RGB)
@@ -61,35 +62,47 @@
 (defn- diff-context
   [{:keys [config state-atom] :as _scheduler}
    new-context]
-  (let [{:keys [context gl-composite-context]} @state-atom
-        ctx-diff    (context/diff-info context new-context)
-        new-ctx
-        (-> (context/diff context new-context ctx-diff)
-            (assoc :gl-composite-context gl-composite-context)
-            (merge (select-keys
-                     config
-                     ;; :overflow 是关键字契约 :clip / :visible，缺省时由 context/overflow 取默认值
-                     [:backend :overflow])))]
-    new-ctx))
+  (p/profile
+    {:id ::diff-context}
+    (p/p
+      :diff-context
+      (let [{:keys [context gl-composite-context]} @state-atom
+            ctx-diff   (p/p :diff-info
+                            (context/diff-info context new-context))
+            new-ctx
+            (-> (p/p :diff
+                     (context/diff context new-context ctx-diff))
+                (assoc :gl-composite-context gl-composite-context)
+                (merge (select-keys
+                         config
+                         ;; :overflow 是关键字契约 :clip / :visible，缺省时由 context/overflow 取默认值
+                         [:backend :overflow])))]
+        new-ctx))))
 
 (defn diff-state!
   [{:keys [graph layers] :as state}
    scheduler
    new-ctx]
-  (let [building    (graph/build-graph layers scheduler new-ctx)
-        new-graph   (:graph building)
-        result-node (get (cg/nodes new-graph) (result/result-key))
-        above-nodes (:above-nodes building)]
-    ;; 1. 评估——设置新图各节点的 caching? 标志
-    (evaluate/evaluate! new-graph above-nodes new-ctx)
-    ;; 结果节点总是缓存
-    (proto/set-caching! result-node true)
-    (graph/diff! graph new-graph [])
-    ;; 从结果节点中取出新脏瓦片，更新到上下文
+  (p/profile
+    {:id ::diff-state}
+    (p/p
+      :diff-state
+      (let [building    (graph/build-graph layers scheduler new-ctx)
+            new-graph   (:graph building)
+            result-node (get (cg/nodes new-graph) (result/result-key))
+            above-nodes (:above-nodes building)]
+        ;; 1. 评估——设置新图各节点的 caching? 标志
+        (p/p :evaluate
+             (evaluate/evaluate! new-graph above-nodes new-ctx))
+        ;; 结果节点总是缓存
+        (proto/set-caching! result-node true)
+        (p/p :diff-graph
+             (graph/diff! graph new-graph []))
+        ;; 从结果节点中取出新脏瓦片，更新到上下文
 
-    ;; 2. diff——migrate 根据新旧 caching?/cached? 状态迁移或释放
-    (assoc state :graph new-graph
-                 :context new-ctx)))
+        ;; 2. diff——migrate 根据新旧 caching?/cached? 状态迁移或释放
+        (assoc state :graph new-graph
+                     :context new-ctx)))))
 
 (defn- empty-backdrop [{:keys [backdrop] :as _scheduler}]
   (TiledCanvas.
@@ -104,34 +117,50 @@
   (set-layers! [_ layers]
     (diff-layers! state-atom layers))
   (render! [this ctx]
-    (-> (ensure-facilities! this)
-        (promise/then
-          (fn [_]
-            (let [new-ctx (diff-context this ctx)]
-              (swap! state-atom diff-state! this new-ctx))
-            (let [{:keys [graph layers gl-composite-context]} @state-atom]
-              (if (and (seq layers) graph)
-                (-> (cg/reduce-to graph (result/result-key))
-                    (cg/solve)
-                    (promise/handle
-                      (fn [v e]
-                        (when e
-                          (log/error e "schedule failed"))
-                        v))
-                    (promise/fmap
-                      (fn [computed]
-                        (let [result
-                              (.copy (proto/canvas (get computed (result/result-key))))]
-                          ;; 清理除了GL 缓存外的所有瓦片,减少编辑时候的 COW 触发
-                          (when gl-composite-context
-                            (doseq [l layers]
-                              (when-let [c (:canvas l)]
-                                (GLAtlas/keepGLTile ^TiledCanvas c))))
-                          ;; 保险起见的最终清理清理
-                          (apply util/close-safely (vals computed))
-                          result))))
-                (promise/resolved
-                  (empty-backdrop this))))))))
+    (let [t-render-begin (System/currentTimeMillis)]
+      (-> (ensure-facilities! this)
+          (promise/then
+            (fn [_]
+              (let [new-ctx (diff-context this ctx)]
+                (swap! state-atom diff-state! this new-ctx))
+              (let [{:keys [graph layers gl-composite-context]} @state-atom
+                    t-solve-graph-begin (System/currentTimeMillis)]
+                (if (and (seq layers) graph)
+                  (-> (cg/reduce-to graph (result/result-key))
+                      (cg/solve)
+                      (promise/handle
+                        (fn [v e]
+                          (let [t-solve-graph-end (System/currentTimeMillis)]
+                            (log/debug "graph solved. time cost:"
+                                       (- t-solve-graph-end t-solve-graph-begin) "ms"))
+                          (when e
+                            (log/error e "schedule failed"))
+                          v))
+                      (promise/fmap
+                        (fn [computed]
+                          (let [result
+                                (.copy (proto/canvas (get computed (result/result-key))))]
+                            ;; 清理除了GL 缓存外的所有瓦片,减少编辑时候的 COW 触发
+                            (p/profile
+                              {:id ::keep-gl-tiles}
+                              (p/p :keep-gl-tiles
+                                   (when gl-composite-context
+                                     (doseq [l layers]
+                                       (when-let [c (:canvas l)]
+                                         (GLAtlas/keepGLTile ^TiledCanvas c))))))
+                            ;; 保险起见的最终清理清理
+                            (p/profile
+                              {:id ::close-computed-result}
+                              (p/p
+                                :close-computed-result
+                                (apply util/close-safely (vals computed))))
+
+                            (let [t-render-end (System/currentTimeMillis)]
+                              (log/debug "render! complete. time cost:"
+                                         (- t-render-end t-render-begin) "ms"))
+                            result))))
+                  (promise/resolved
+                    (empty-backdrop this)))))))))
   AutoCloseable
   (close [_]
     (let [{:keys [graph gl-composite-context layers]} @state-atom]

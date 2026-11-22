@@ -32,7 +32,7 @@
   [^INode node layers
    {:keys [view-matrix viewport-h viewport-w
            tile-size image-width image-height image-dirty-tiles
-           gl-composite-context image-tiles image-aabb]
+           gl-composite-context image-aabb]
     :as ctx}]
   (let [backend (context/render-backend ctx)
         resolved-layers
@@ -49,7 +49,6 @@
            :image-height image-height
            ;; 派生数据也一并这里计算
            :image-aabb image-aabb
-           :image-tiles image-tiles
            ;; 溢出显示策略，关键字契约 :clip / :visible
            :overflow (context/overflow ctx)
            :merge-fn merge-fn}

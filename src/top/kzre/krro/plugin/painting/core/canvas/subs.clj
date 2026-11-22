@@ -1,7 +1,8 @@
 (ns top.kzre.krro.plugin.painting.core.canvas.subs
   "画布相关的反应式订阅定义"
   (:require [top.kzre.krro.core.reframe.core :as rf]
-            [top.kzre.krro.plugin.painting.core.store :as store]))
+            [top.kzre.krro.plugin.painting.core.store :as store]
+            [top.kzre.krro.plugin.painting.core.record :as record]))
 
 (rf/reg-sub
   store/app-id
@@ -31,8 +32,7 @@
 (rf/reg-sub
   store/app-id
   :current-tool
-  (fn [record]
-    (get-in record [:record  :current-tool])))
+  record/current-tool)
 
 (rf/reg-sub
   store/app-id

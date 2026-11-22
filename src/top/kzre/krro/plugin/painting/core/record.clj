@@ -34,12 +34,14 @@
   (get record :cursor-position))
 
 (defn current-tool [record]
-  (or (get-in record [:canvas-data :tool-data])
-      (get-in record [ :tool-data])))
+  (get record :current-tool))
+
+(defn assoc-current-tool [record tool-id]
+  (assoc record :current-tool tool-id))
 
 (defn current-layer-id
   [record]
-  (get-in record [:canvas-data :current-layer-id]))
+  (get record :current-layer-id))
 
 (defn pivot-center [record]
   (get-in record [:canvas-data :pivot-center] :aabb-center))

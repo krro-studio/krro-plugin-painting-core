@@ -37,15 +37,16 @@
   (dependencies [_]
     [:context layer-id])
   (compute [this
-            [{:keys [view-dirty-tiles image-tiles]
+            [{:keys [view-dirty-tiles image-aabb]
               :as ctx} layer]]
     ;; 不管是否裁剪，视口里脏的地方总要剔除
     (.deleteTiles backdrop view-dirty-tiles)
 
-    ;; 裁剪到图像范围
-    ;; image-tiles 在图像尺寸未知时是 nil——此时没什么可裁剪的
-    (when (and (context/clip? ctx) (some? image-tiles))
-      (.keepTiles backdrop image-tiles))
+    ;; 裁剪到图像范围(TODO 旋转下失败，但一般 这里是防御，渲染下，一般由 dirty 裁剪掉了)
+    (when (and (context/clip? ctx) (some? image-aabb))
+      (.keepAabb backdrop
+                 (:min-x image-aabb) (:min-y image-aabb)
+                 (:max-x image-aabb) (:max-y image-aabb)))
     (if (and (.isEmpty (.getTiles ^TiledCanvas backdrop))
              (KMath/mat2dIsIdentity (proto/transform layer)))
       (promise/resolved layer)

@@ -57,3 +57,9 @@
     (swap! record-data dissoc canvas-id)
     ;; TODO 添加hook，方便最终清理检查
     (log/info "unregistered store for canvas-id:" canvas-id)))
+
+(defn subscribe [record-id query-id & params]
+  (apply rf/subscribe app-id record-id query-id params))
+
+(defn dispatch [event-v]
+  (rf/dispatch app-id event-v))

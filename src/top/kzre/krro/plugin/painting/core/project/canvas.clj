@@ -46,6 +46,8 @@
    width                                ;; 必需，number?
    height                               ;; 必需，number?
    layers                               ;; 必需，vector?
+   ;; TODO 下面这些属于会话数据，不进项目数据中，虽然训词持久化，但不属于项目数据
+   ;; 项目数据需要强一致性，我们不对下面的这些数据做这个保证，UNDO 时候也不会回退
    current-layer-id                     ;; 可选，keyword? 或 nil
    current-tool
    horizontal-mirror-enabled            ;; 可选，boolean? 或 nil

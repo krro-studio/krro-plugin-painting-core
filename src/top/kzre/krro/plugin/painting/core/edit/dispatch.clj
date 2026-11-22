@@ -5,7 +5,8 @@
    [top.kzre.krro.plugin.painting.core.edit.anchor.state :as anchor]
    [top.kzre.krro.plugin.painting.core.edit.interceptors :refer [tool-context-interceptor]]
    [top.kzre.krro.plugin.painting.core.edit.tool :as tool :refer [cleanup-tool-interceptor]]
-   [top.kzre.krro.plugin.painting.core.store :as store]))
+   [top.kzre.krro.plugin.painting.core.store :as store]
+   [top.kzre.krro.plugin.painting.core.record :as record]))
 
 (defn viewport-event [{:keys [device-type mouse-button]
                        :as event-map}]
@@ -38,13 +39,13 @@
   (fn [cofx [_ _ tool-id]]
     {:record
      (-> (:record cofx)
-         (assoc-in [ :tool-data]
+         (assoc-in [:tool-data]
                    (case tool-id
                      ;; 默认状态
                      :anchor (anchor/make-state)
                      :brush (brush/make-state)
                      nil))
-         (assoc-in [:current-tool] tool-id))}))
+         (record/assoc-current-tool tool-id))}))
 
 
 (rf/reg-event-fx
