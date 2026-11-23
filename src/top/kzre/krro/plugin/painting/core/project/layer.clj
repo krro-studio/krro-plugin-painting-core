@@ -1,16 +1,16 @@
 (ns top.kzre.krro.plugin.painting.core.project.layer)
 
-(defn opacity
+(defn ^:deprecated opacity
   "返回图层的不透明度。"
   [layer]
   (:opacity layer 1.0))
 
-(defn blend-mode
+(defn ^:deprecated blend-mode
   "返回图层的混合模式, 默认是 normal 合成"
   [layer]
   (:blend-mode layer :normal))
 
-(defn visible?
+(defn ^:deprecated visible?
   "返回图层是否可见。"
   [layer]
   (:visible? layer true))

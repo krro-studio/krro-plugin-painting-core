@@ -10,4 +10,5 @@
     [top.kzre.krro.plugin.painting.core.oplog.anchor]
     [top.kzre.krro.plugin.painting.core.oplog.fit-segment-free]
     [top.kzre.krro.plugin.painting.core.oplog.width]
+    [top.kzre.krro.plugin.painting.core.oplog.layer]
     ))

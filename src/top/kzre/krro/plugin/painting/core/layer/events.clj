@@ -31,7 +31,7 @@
            (events/set-selected-layer layer-id))
        :fx [[:save-raster-data-fx record-id layer-id]        ;; 创建光栅数据（I/O）
             [:record-raster-layer-added record-id layer-id]  ;; undo/redo 记录
-            [:rerender-canvas-frame-fx record-id]            ;; UI 刷新
+            [:rerender-canvas-frame record-id]            ;; UI 刷新
             ]})))
 
 (rf/reg-event-fx
@@ -50,7 +50,7 @@
            (events/set-selected-layer layer-id))
        :fx
        [[:record-canvas-edited record-id]
-        [:rerender-canvas-frame-fx record-id]]})))
+        [:rerender-canvas-frame record-id]]})))
 
 (rf/reg-event-fx
   store/app-id :new-perspective-layer
@@ -68,14 +68,14 @@
                          (events/set-selected-layer layer-id))]
       {:record new-record
        :fx [[:record-perspective-layer-added record-id layer-id]  ;; undo 记录
-            [:rerender-canvas-frame-fx record-id]]})))        ;; UI 刷新
+            [:rerender-canvas-frame record-id]]})))        ;; UI 刷新
 
 (rf/reg-event-fx
   store/app-id :after-undo-add-raster-layer
   (fn [_ [_ record-id layer-id dirty-tiles]]
     {:fx [[:delete-raster-data-fx layer-id]       ;; 删除光栅数据（I/O）
           [:render-canvas record-id dirty-tiles]           ;; 重绘画布
-          [:rerender-canvas-frame-fx record-id]]}))  ;; 刷新 UI
+          [:rerender-canvas-frame record-id]]}))  ;; 刷新 UI
 
 (rf/reg-event-fx
   store/app-id :before-redo-add-raster-layer
@@ -86,7 +86,7 @@
   store/app-id :after-redo-add-raster-layer
   (fn [_ [_ record-id dirty-tiles]]
     {:fx [[:render-canvas record-id dirty-tiles]
-          [:rerender-canvas-frame-fx record-id]]}))
+          [:rerender-canvas-frame record-id]]}))
 
 
 ;; 移除被选中的图层
@@ -102,7 +102,7 @@
       {:record (assoc-in (:record cofx) [:canvas-data :current-layer-id] layer-id)
        :fx [[:set-selected-layer record-id layer-id]   ;; 运行时选中
             [:render-canvas record-id dirty-tiles]                 ;; 画布重绘
-            [:rerender-canvas-frame-fx record-id]         ;; UI 刷新
+            [:rerender-canvas-frame record-id]         ;; UI 刷新
             ]})))
 
 
@@ -134,16 +134,6 @@
 
 (rf/reg-event-fx
   store/app-id :duplicate-perspective-layer
-  (fn [cofx [_ record-id]]                         ;; 解构事件向量
-    (let [record (:record cofx)
-          layers (-> record :canvas-data :layers)]
-      {:record record
-       :fx [[:log-info (str "Current layers of " record-id ": " layers)]]})))
-
-
-
-(rf/reg-event-fx
-  store/app-id :set-layer-visibility
   (fn [cofx [_ record-id]]                         ;; 解构事件向量
     (let [record (:record cofx)
           layers (-> record :canvas-data :layers)]

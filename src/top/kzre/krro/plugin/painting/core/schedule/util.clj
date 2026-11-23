@@ -68,7 +68,7 @@
    :type       :raster
    :opacity    (proto/opacity layer)
    :blend-mode (proto/blend-mode layer)
-   :visible   (proto/visible? layer)
+   :visible?   (proto/visible? layer)
    :canvas    (proto/canvas layer)
    :transform (proto/transform layer)
    :backend    backend})

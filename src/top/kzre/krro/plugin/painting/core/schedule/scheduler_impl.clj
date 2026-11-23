@@ -1,8 +1,9 @@
 (ns top.kzre.krro.plugin.painting.core.schedule.scheduler-impl
   (:require
    [taoensso.timbre :as log]
+   [taoensso.tufte :as p]
    [top.kzre.krro.core.util.computing-graph :as cg]
-   [top.kzre.krro.core.util.promise :as promise]
+   [top.kzre.krro.core.util.promise :as promise :refer [plet]]
    [top.kzre.krro.plugin.painting.core.layer.dispose :as dispose]
    [top.kzre.krro.plugin.painting.core.project.canvas :as pc]
    [top.kzre.krro.plugin.painting.core.schedule.context :as context]
@@ -12,14 +13,13 @@
    [top.kzre.krro.plugin.painting.core.schedule.layer-impl]
    [top.kzre.krro.plugin.painting.core.schedule.protocol :as proto]
    [top.kzre.krro.plugin.painting.core.schedule.result :as result]
-   [top.kzre.krro.plugin.painting.core.schedule.util :as util]
-   [taoensso.tufte :as p])
+   [top.kzre.krro.plugin.painting.core.schedule.util :as util])
   (:import
-    (java.lang AutoCloseable)
-    (top.kzre.colorutils.color RGB)
-    (top.kzre.krro.canvas.gl.tile GLAtlas)
-    (top.kzre.krro.core.util.computing_graph ComputingGraph)
-    (top.kzre.krro.util.tile TiledCanvas)))
+   (java.lang AutoCloseable)
+   (top.kzre.colorutils.color RGB)
+   (top.kzre.krro.canvas.gl.tile GLAtlas)
+   (top.kzre.krro.core.util.computing_graph ComputingGraph)
+   (top.kzre.krro.util.tile TiledCanvas)))
 ;; TODO 调度器性能监控，到底哪里产生了热点
 (defrecord SchedulerState [^ComputingGraph graph
                            layers
@@ -109,6 +109,33 @@
     (.getTileSize ^TiledCanvas backdrop)
     (.getDefaultPixel ^TiledCanvas backdrop)))
 
+(defn- do-render! [{:keys [state-atom] :as scheduler} ctx]
+  (let [t-render-begin (System/currentTimeMillis)]
+    (plet
+      [:catch (fn [e] (when e (log/error e "do-render! failed")))
+       _ (ensure-facilities! scheduler)]
+      (let [new-ctx (diff-context scheduler ctx)]
+        (swap! state-atom diff-state! scheduler new-ctx))
+      (let [{:keys [graph layers gl-composite-context]} @state-atom]
+        (if (and (seq layers) graph)
+          (plet
+            [:catch (fn [e] (when e (log/error e "solve failed")))
+             computed (-> (cg/reduce-to graph (result/result-key))
+                          (cg/solve))]
+            (let [result (.copy (proto/canvas (get computed (result/result-key))))]
+              ;; 清理除了GL 缓存外的所有瓦片,减少编辑时候的 COW 触发
+              (when gl-composite-context
+                (doseq [l layers]
+                  (when-let [c (:canvas l)]
+                    (GLAtlas/keepGLTile ^TiledCanvas c))))
+              ;; 保险起见的最终清理清理
+              (apply util/close-safely (vals computed))
+              (let [t-render-end (System/currentTimeMillis)]
+                (log/debug "render! complete. time cost:"
+                           (- t-render-end t-render-begin) "ms"))
+              result))
+          (promise/resolved (empty-backdrop scheduler)))))))
+
 (defrecord RenderScheduler
   [config
    state-atom
@@ -117,50 +144,7 @@
   (set-layers! [_ layers]
     (diff-layers! state-atom layers))
   (render! [this ctx]
-    (let [t-render-begin (System/currentTimeMillis)]
-      (-> (ensure-facilities! this)
-          (promise/then
-            (fn [_]
-              (let [new-ctx (diff-context this ctx)]
-                (swap! state-atom diff-state! this new-ctx))
-              (let [{:keys [graph layers gl-composite-context]} @state-atom
-                    t-solve-graph-begin (System/currentTimeMillis)]
-                (if (and (seq layers) graph)
-                  (-> (cg/reduce-to graph (result/result-key))
-                      (cg/solve)
-                      (promise/handle
-                        (fn [v e]
-                          (let [t-solve-graph-end (System/currentTimeMillis)]
-                            (log/debug "graph solved. time cost:"
-                                       (- t-solve-graph-end t-solve-graph-begin) "ms"))
-                          (when e
-                            (log/error e "schedule failed"))
-                          v))
-                      (promise/fmap
-                        (fn [computed]
-                          (let [result
-                                (.copy (proto/canvas (get computed (result/result-key))))]
-                            ;; 清理除了GL 缓存外的所有瓦片,减少编辑时候的 COW 触发
-                            (p/profile
-                              {:id ::keep-gl-tiles}
-                              (p/p :keep-gl-tiles
-                                   (when gl-composite-context
-                                     (doseq [l layers]
-                                       (when-let [c (:canvas l)]
-                                         (GLAtlas/keepGLTile ^TiledCanvas c))))))
-                            ;; 保险起见的最终清理清理
-                            (p/profile
-                              {:id ::close-computed-result}
-                              (p/p
-                                :close-computed-result
-                                (apply util/close-safely (vals computed))))
-
-                            (let [t-render-end (System/currentTimeMillis)]
-                              (log/debug "render! complete. time cost:"
-                                         (- t-render-end t-render-begin) "ms"))
-                            result))))
-                  (promise/resolved
-                    (empty-backdrop this)))))))))
+    (do-render! this ctx))
   AutoCloseable
   (close [_]
     (let [{:keys [graph gl-composite-context layers]} @state-atom]

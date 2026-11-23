@@ -1,11 +1,13 @@
 (ns top.kzre.krro.plugin.painting.core.record
   (:require
-    [clojure.spec.alpha :as s]
-    [top.kzre.krro.canvas.core.layer.path :as path]
-    [top.kzre.krro.plugin.painting.core.project.canvas :as pc]
-    [top.kzre.krro.plugin.painting.core.store :as store]
-    [top.kzre.krro.plugin.painting.core.tool.util :as tool-util])
-  (:import (top.kzre.krro.util.math KMath)))
+   [clojure.spec.alpha :as s]
+   [top.kzre.krro.canvas.core.layer.core :as layer.core]
+   [top.kzre.krro.canvas.core.layer.path :as path]
+   [top.kzre.krro.plugin.painting.core.project.canvas :as pc]
+   [top.kzre.krro.plugin.painting.core.store :as store]
+   [top.kzre.krro.plugin.painting.core.tool.util :as tool-util])
+  (:import
+   (top.kzre.krro.util.math KMath)))
 
 ;; TODO 非画布记录，1. 合并全局数据 2. 做别的 record
 (s/def ::canvas-id keyword?)
@@ -85,8 +87,8 @@
         ;; 图层信息
         layer-path (when layer-id (path/get-path layers layer-id ))
         layer (when layer-path (path/get-layer layers layer-path))
-        layer-type (when layer (:type layer))
-        layer-visible (when layer (:visible layer))
+        layer-type (when layer (layer.core/layer-type layer))
+        layer-visible (when layer (layer.core/visible? layer))
         layer-transform-inv (when layer (tool-util/layer-transform-inverse layer layers))
         layer-transform (when layer-transform-inv (KMath/mat2dInv layer-transform-inv))]
     {:layer-id            layer-id

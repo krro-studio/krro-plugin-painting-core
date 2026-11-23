@@ -152,7 +152,7 @@
   proto/IOperation
   (realize [this record _ctx]
     (let [{:keys [canvas-id layer layers]} (record/layer-context record layer-id)
-          old-paths (pv/paths layer)
+          old-paths (cv/paths layer)
           new-paths (merge old-paths paths-changed)
           new-layer (assoc layer :paths new-paths)]
       [(assoc-in record [:canvas-data :layers]

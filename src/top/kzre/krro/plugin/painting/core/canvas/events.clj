@@ -52,7 +52,7 @@
                        (set-selected-layer layer-id)
                        (clear-dirty-tiles))
            :fx     [[:render-canvas record-id dirty-tiles]      ;; 画布重绘
-                    [:rerender-canvas-frame-fx record-id]         ;; UI 刷新
+                    [:rerender-canvas-frame record-id]         ;; UI 刷新
                     ]})))))
 
 ;; 多选
@@ -61,13 +61,13 @@
   (fn [cofx [_ record-id layer-id]]
     (let [new-record (append-selected-layer (:record cofx) layer-id)]
       {:record new-record
-       :fx [[:rerender-canvas-frame-fx record-id]]})))
+       :fx [[:rerender-canvas-frame record-id]]})))
 
 ;; 刷新和画布相关的所有UI和画布
 (rf/reg-event-fx
   store/app-id :refresh-canvas
   (fn [_ [_ record-id]]
-    {:fx [[:rerender-canvas-frame-fx record-id]
+    {:fx [[:rerender-canvas-frame record-id]
           [:render-canvas record-id (viewport/refreshed)]]}))
 
 (rf/reg-event-fx

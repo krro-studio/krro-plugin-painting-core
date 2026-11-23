@@ -1,15 +1,19 @@
 (ns top.kzre.krro.plugin.painting.core.canvas.effects
   "画布相关的副作用处理器"
   (:require
-   [taoensso.timbre :as log]
-   [top.kzre.krro.core.hook :as hook]
-   [top.kzre.krro.core.message :as msg]
-   [top.kzre.krro.core.reframe.core :as rf]
-   [top.kzre.krro.plugin.painting.core.layer.destroy :as destroy]
-   [top.kzre.krro.plugin.painting.core.project.canvas :as pc]
-   [top.kzre.krro.plugin.painting.core.state :as state]
-   [top.kzre.krro.plugin.painting.core.store :as store]
-   ))
+    [taoensso.timbre :as log]
+    [top.kzre.krro.core.core :as kcc]
+    [top.kzre.krro.core.hook :as hook]
+    [top.kzre.krro.core.message :as msg]
+    [top.kzre.krro.core.reframe.core :as rf]
+    [top.kzre.krro.plugin.painting.core.layer.destroy :as destroy]
+    [top.kzre.krro.plugin.painting.core.project.canvas :as pc]
+    [top.kzre.krro.plugin.painting.core.state :as state]
+    [top.kzre.krro.plugin.painting.core.store :as store]
+
+    [top.kzre.krro.core.window :as win]
+    [top.kzre.krro.core.frame :as frame]
+    [top.kzre.krro.plugin.painting.core.spec :as spec]))
 
 (rf/reg-fx
   :krro.painting :log-info
@@ -34,9 +38,12 @@
 
 ;; 刷新UI
 (rf/reg-fx
-  store/app-id :rerender-canvas-frame-fx
+  store/app-id :rerender-canvas-frame
   (fn [_ record-id]
-    (state/rerender-frame-with-canvas-id! record-id)))
+    (let [frames (win/all-frames)
+          filtered (filter #(= (frame/param % spec/canvas-id-key) record-id) frames)]
+      (doseq [f filtered]
+        (kcc/rerender! f)))))
 
 ;; 刷新画布
 (rf/reg-fx
