@@ -3,8 +3,6 @@
     [top.kzre.krro.canvas.vector.path]
    [top.kzre.krro.canvas.vector.bezier.handle]
    [top.kzre.krro.core.reframe.transaction :as tx]
-   [top.kzre.krro.plugin.painting.core.algo.segment]
-
    [top.kzre.krro.plugin.painting.core.edit.anchor.anchor-quadtree :as tree]
    [top.kzre.krro.plugin.painting.core.edit.anchor.overlay :as overlay]
    [top.kzre.krro.plugin.painting.core.edit.tool :as p]

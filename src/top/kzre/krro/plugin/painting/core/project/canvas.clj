@@ -42,13 +42,14 @@
 ;; TODO 会话数据不进CanvasData。关闭画布时候另外持久化一下
 ;; TODO 进CanvasData 唯一标准，你是否希望这个数据在undo/redo时候恢复
 (defrecord CanvasData
-  [id                                   ;; 必需，keyword?
-   width                                ;; 必需，number?
-   height                               ;; 必需，number?
-   layers                               ;; 必需，vector?
+  [id
+   width
+   height
+   layers
+   ;; 当前图层是重要属性，影响渲染，不作为会话数据管理
+   current-layer-id
    ;; TODO 下面这些属于会话数据，不进项目数据中，虽然训词持久化，但不属于项目数据
    ;; 项目数据需要强一致性，我们不对下面的这些数据做这个保证，UNDO 时候也不会回退
-   current-layer-id                     ;; 可选，keyword? 或 nil
    current-tool
    horizontal-mirror-enabled            ;; 可选，boolean? 或 nil
    horizontal-mirror-center             ;; 可选，number? 或 nil

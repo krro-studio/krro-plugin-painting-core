@@ -6,28 +6,25 @@
     [top.kzre.krro.plugin.painting.core.record :as record]
     [top.kzre.krro.plugin.painting.core.store :as store]))
 
+;; 单选图层
+(rf/reg-event-fx
+  store/app-id :select-layer
+  (fn [cofx [_ record-id layer-id]]
+    (let [record (:record cofx)]
+      {:record (-> record
+                   (record/set-current-layer layer-id)
+                   (record/select-layer layer-id))
+       :fx [[:rerender-canvas-frame record-id]]})))
 
-(defn set-selected-layer
-  [record layer-id]
-  (-> record
-      (assoc-in [:selected-layer-id] layer-id)
-      (assoc-in [:selected-layer-ids] [layer-id])))
+;; 多选图层
+(rf/reg-event-fx
+  store/app-id :select-layer-multi
+  (fn [cofx [_ record-id layer-id]]
+    (let [new-record (record/select-layer-multi (:record cofx) layer-id)]
+      {:record new-record
+       :fx [[:rerender-canvas-frame record-id]]}
+      )))
 
-(defn append-selected-layer
-  "向 record 的选中图层列表追加一个图层 ID（去重），并更新当前选中 ID 为该图层。"
-  [record layer-id]
-  (-> record
-      (update-in [ :selected-layer-ids]
-                 (fn [ids]
-                   (-> (or ids [])
-                       (conj layer-id)
-                       (distinct)
-                       (vec))))
-      (assoc-in [:selected-layer-id] layer-id)))
-
-(defn clear-dirty-tiles
-  [record]
-  (assoc-in record [ :dirty-tiles] #{}))
 
 ;; 日志
 (rf/reg-event-fx
@@ -38,30 +35,7 @@
       {:record record
        :fx [[:log-info (str "Current layers of " record-id ": " layers)]]})))
 
-;; 单选
-(rf/reg-event-fx
-  store/app-id :select-layer
-  (fn [cofx [_ record-id layer-id]]
-    (let [cd (:canvas-data (:record cofx))]
-      (if (= (:current-layer-id cd) layer-id)
-        {:record (:record cofx)}
-        (let [state ( record-id)
-              dirty-tiles (:dirty-tiles state)]
-          {:record (-> (:record cofx)
-                       (record/set-current-layer layer-id)
-                       (set-selected-layer layer-id)
-                       (clear-dirty-tiles))
-           :fx     [[:render-canvas record-id dirty-tiles]      ;; 画布重绘
-                    [:rerender-canvas-frame record-id]         ;; UI 刷新
-                    ]})))))
 
-;; 多选
-(rf/reg-event-fx
-  store/app-id :multi-select-layer
-  (fn [cofx [_ record-id layer-id]]
-    (let [new-record (append-selected-layer (:record cofx) layer-id)]
-      {:record new-record
-       :fx [[:rerender-canvas-frame record-id]]})))
 
 ;; 刷新和画布相关的所有UI和画布
 (rf/reg-event-fx
@@ -74,8 +48,7 @@
   store/app-id :canvas/set-cursor-position
   (fn [cofx [_ _ cursor-position]]
     {:record (-> (:record cofx)
-                 (assoc :cursor-position cursor-position))
-    }))
+                 (assoc :cursor-position cursor-position))}))
 
 (rf/reg-event-fx
   store/app-id :close-canvas

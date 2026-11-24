@@ -41,9 +41,31 @@
 (defn assoc-current-tool [record tool-id]
   (assoc record :current-tool tool-id))
 
+
 (defn current-layer-id
   [record]
-  (get record :current-layer-id))
+  (get-in record [:canvas-data :current-layer-id]))
+
+(defn select-layer
+  [record layer-id]
+  (-> record
+      (assoc :selected-layer-id layer-id)
+      (assoc :selected-layer-ids #{layer-id})))
+
+(defn selected-layer-ids
+  [record]
+  (get record :selected-layer-ids #{}))
+
+(defn select-layer-multi
+  "向 record 的选中图层列表追加一个图层 ID（去重），并更新当前选中 ID 为该图层。"
+  [record layer-id]
+  (if layer-id
+    (-> record
+        (update :selected-layer-ids
+                (fn [ids]
+                  (conj (or ids #{}) layer-id)))
+        (assoc :selected-layer-id layer-id))
+    record))
 
 (defn pivot-center [record]
   (get-in record [:canvas-data :pivot-center] :aabb-center))

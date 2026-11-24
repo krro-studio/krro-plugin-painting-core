@@ -28,7 +28,7 @@
        (-> record
            (record/insert-layer-at-path path new-layer)
            (record/set-current-layer layer-id)
-           (events/set-selected-layer layer-id))
+           (record/select-layer layer-id))
        :fx [[:save-raster-data-fx record-id layer-id]        ;; 创建光栅数据（I/O）
             [:record-raster-layer-added record-id layer-id]  ;; undo/redo 记录
             [:rerender-canvas-frame record-id]            ;; UI 刷新
@@ -47,7 +47,7 @@
        (-> record
            (record/insert-layer-at-path path new-layer)
            (record/set-current-layer layer-id)
-           (events/set-selected-layer layer-id))
+           (record/select-layer layer-id))
        :fx
        [[:record-canvas-edited record-id]
         [:rerender-canvas-frame record-id]]})))
@@ -65,7 +65,7 @@
           new-record (-> record
                          (record/insert-layer-at-path path new-layer)
                          (record/set-current-layer layer-id)
-                         (events/set-selected-layer layer-id))]
+                         (record/select-layer layer-id))]
       {:record new-record
        :fx [[:record-perspective-layer-added record-id layer-id]  ;; undo 记录
             [:rerender-canvas-frame record-id]]})))        ;; UI 刷新

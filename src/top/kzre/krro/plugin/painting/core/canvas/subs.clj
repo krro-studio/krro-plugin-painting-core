@@ -17,23 +17,33 @@
   :<- [:canvas-data]                         ; 依赖上层订阅
   :layers)
 
-(rf/reg-sub
-  store/app-id
-  :current-layer-id
-  :<- [:canvas-data]
-  :current-layer-id)
-
+;; 图像尺寸
 (rf/reg-sub
   store/app-id
   :image-size
   :<- [:canvas-data]
   (fn [canvas-data] (select-keys canvas-data [:width :height])))
 
+;; 当前图层
+(rf/reg-sub
+  store/app-id
+  :current-layer-id
+  record/current-layer-id)
+
+;;被选中的图层
+(rf/reg-sub
+  store/app-id
+  :selected-layer-ids
+  record/selected-layer-ids)
+
+
+;; 当前工具
 (rf/reg-sub
   store/app-id
   :current-tool
   record/current-tool)
 
+;; 当前光标位置
 (rf/reg-sub
   store/app-id
   :canvas/cursor-position
