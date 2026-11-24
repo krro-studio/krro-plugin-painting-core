@@ -14,14 +14,14 @@
    (top.kzre.krro.util.tile TiledCanvas)))
 
 (rf/reg-fx
-  store/app-id :save-raster-data-fx
+  store/app-id :save-raster-data
   (fn [_ canvas-id layer-id]
     (let [layer (pc/find-layer-in-canvas! canvas-id layer-id)
           canvas (:canvas layer)]
       (pr/create-raster! layer-id canvas-id canvas))))
 
 (rf/reg-fx
-  store/app-id :delete-raster-data-fx
+  store/app-id :delete-raster-data
   (fn [_ layer-id]
     (pr/delete-raster! layer-id)))
 

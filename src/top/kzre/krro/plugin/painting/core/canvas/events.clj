@@ -41,8 +41,8 @@
 (rf/reg-event-fx
   store/app-id :refresh-canvas
   (fn [_ [_ record-id]]
-    {:fx [[:rerender-canvas-frame record-id]
-          [:render-canvas record-id (viewport/refreshed)]]}))
+    {:fx [[:render-canvas record-id (viewport/refreshed)]
+          [:rerender-canvas-frame record-id]]}))
 
 (rf/reg-event-fx
   store/app-id :canvas/set-cursor-position

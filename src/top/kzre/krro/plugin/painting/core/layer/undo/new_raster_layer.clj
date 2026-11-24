@@ -40,18 +40,18 @@
      (log/info "undo interceptor")
      (let [{:keys [canvas-id layer-id dirty-tiles]} old-metadata]
        (cb)
-       (rf/dispatch store/app-id
-                    [:after-undo-add-raster-layer canvas-id layer-id dirty-tiles])))
+       (store/dispatch
+         [:after-undo-add-raster-layer canvas-id layer-id dirty-tiles])))
    :redo
    (fn [{:keys [new-metadata]}
         cb]
      (log/info "redo interceptor")
      (let [{:keys [canvas-id layer-id dirty-tiles snapshot]} new-metadata]
        (let [canvas (snap/read-tiled-canvas snapshot)]
-         (rf/dispatch store/app-id
-                      [:before-redo-add-raster-layer
-                       canvas-id layer-id canvas]))
+         (store/dispatch
+           [:before-redo-add-raster-layer
+            canvas-id layer-id canvas]))
        (cb)
-       (rf/dispatch store/app-id
-                    [:after-redo-add-raster-layer
-                     canvas-id dirty-tiles])))})
+       (store/dispatch
+         [:after-redo-add-raster-layer
+          canvas-id dirty-tiles])))})

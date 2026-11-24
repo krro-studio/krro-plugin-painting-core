@@ -99,12 +99,15 @@
   [record layer-id]
   (assoc-in record [:canvas-data :current-layer-id] layer-id))
 
+(defn layers [record]
+  (get-in record [:canvas-data :layers]))
+
 
 (defn layer-context [record & [target-layer-id]]
   (let [;; 基础数据
         canvas-data (:canvas-data record)
         layer-id (or target-layer-id (:current-layer-id canvas-data))
-        layers (get-in record [:canvas-data :layers])
+        layers (layers record)
 
         ;; 图层信息
         layer-path (when layer-id (path/get-path layers layer-id ))

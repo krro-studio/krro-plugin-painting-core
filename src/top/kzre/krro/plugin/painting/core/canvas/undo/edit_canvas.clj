@@ -1,8 +1,7 @@
 (ns top.kzre.krro.plugin.painting.core.canvas.undo.edit-canvas
   "持久化数据获得变更的记录，刷新一次UI, 刷新一次渲染"
-  (:require [top.kzre.krro.plugin.undo.core :as undo]
-            [top.kzre.krro.core.reframe.core :as rf]
-            [top.kzre.krro.plugin.painting.core.store :as store]))
+  (:require [top.kzre.krro.plugin.painting.core.store :as store]
+            [top.kzre.krro.plugin.undo.core :as undo]))
 
 (defn- undo-key [] ::edit-canvas)
 
@@ -19,11 +18,13 @@
    (fn [{:keys [old-metadata]} cb]
      (let [{:keys [canvas-id]} old-metadata]
        (cb)
-       (rf/dispatch store/app-id [:refresh-canvas canvas-id]))
+       (store/dispatch
+         [:refresh-canvas canvas-id]))
      )
    :redo
-   (fn [{:keys [old-metadata]} cb]
-     (let [{:keys [canvas-id]} old-metadata]
+   (fn [{:keys [new-metadata]} cb]
+     (let [{:keys [canvas-id]} new-metadata]
        (cb)
-       (rf/dispatch store/app-id [:refresh-canvas canvas-id]))
+       (store/dispatch
+         [:refresh-canvas canvas-id]))
      )})

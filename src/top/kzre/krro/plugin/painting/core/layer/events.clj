@@ -3,54 +3,30 @@
   (:require
     [top.kzre.krro.canvas.core.layer.util :as lu]
     [top.kzre.krro.canvas.perspective.core :as perspective]
-    [top.kzre.krro.canvas.raster.core :as raster]
     [top.kzre.krro.canvas.vector.core :as vector]
     [top.kzre.krro.core.reframe.core :as rf]
-    [top.kzre.krro.plugin.painting.core.canvas.events :as events]
-    [top.kzre.krro.plugin.painting.core.project.canvas :as pc]
     [top.kzre.krro.plugin.painting.core.record :as record]
     [top.kzre.krro.plugin.painting.core.state :as state]
     [top.kzre.krro.plugin.painting.core.store :as store]))
 
-;; TODO 进 oplog
-;; 新建空白光栅图层
+
 (rf/reg-event-fx
   store/app-id :new-raster-layer
   (fn [cofx [_ record-id]]
     (let [record (:record cofx)
-          canvas-data (:canvas-data record)
-          selected-id (get-in record [:canvas-data :current-layer-id])
-          layers (get canvas-data :layers)
-          path (lu/above-layer-path selected-id layers)
-          new-layer (raster/make-raster-layer pc/global-tile-size)
-          layer-id (:id new-layer)]
-      {:record
-       (-> record
-           (record/insert-layer-at-path path new-layer)
-           (record/set-current-layer layer-id)
-           (record/select-layer layer-id))
-       :fx [[:save-raster-data-fx record-id layer-id]        ;; 创建光栅数据（I/O）
-            [:record-raster-layer-added record-id layer-id]  ;; undo/redo 记录
-            [:rerender-canvas-frame record-id]            ;; UI 刷新
-            ]})))
+          current-layer-id (record/current-layer-id record)]
+      {:dispatch [:oplog/new-raster-layer
+                  record-id current-layer-id
+                  {:undo? true}]})))
 
 (rf/reg-event-fx
   store/app-id :new-vector-layer
   (fn [cofx [_ record-id]]
     (let [record (:record cofx)
-          selected-id (get-in record [:canvas-data :current-layer-id])
-          layers      (get-in record [:canvas-data :layers])
-          path        (lu/above-layer-path selected-id layers)
-          new-layer   (vector/make-vector-layer :antialias false)
-          layer-id (:id new-layer)]
-      {:record
-       (-> record
-           (record/insert-layer-at-path path new-layer)
-           (record/set-current-layer layer-id)
-           (record/select-layer layer-id))
-       :fx
-       [[:record-canvas-edited record-id]
-        [:rerender-canvas-frame record-id]]})))
+          current-layer-id (record/current-layer-id record)]
+      {:dispatch [:oplog/new-vector-layer
+                  record-id current-layer-id
+                  {:undo? true}]})))
 
 (rf/reg-event-fx
   store/app-id :new-perspective-layer
@@ -73,7 +49,7 @@
 (rf/reg-event-fx
   store/app-id :after-undo-add-raster-layer
   (fn [_ [_ record-id layer-id dirty-tiles]]
-    {:fx [[:delete-raster-data-fx layer-id]       ;; 删除光栅数据（I/O）
+    {:fx [[:delete-raster-data layer-id]       ;; 删除光栅数据（I/O）
           [:render-canvas record-id dirty-tiles]           ;; 重绘画布
           [:rerender-canvas-frame record-id]]}))  ;; 刷新 UI
 
