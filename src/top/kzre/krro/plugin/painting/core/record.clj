@@ -56,6 +56,10 @@
   [record]
   (get record :selected-layer-ids #{}))
 
+(defn selected-layer-id
+  [record]
+  (get record :selected-layer-id))
+
 (defn select-layer-multi
   "向 record 的选中图层列表追加一个图层 ID（去重），并更新当前选中 ID 为该图层。"
   [record layer-id]

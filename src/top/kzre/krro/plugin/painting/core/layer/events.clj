@@ -29,6 +29,16 @@
                   {:undo? true}]})))
 
 (rf/reg-event-fx
+  store/app-id :new-layer-group
+  (fn [cofx [_ record-id]]
+    (let [record (:record cofx)]
+      {:dispatch [:oplog/new-layer-group
+                  record-id
+                  {:selected-layer-ids (record/selected-layer-ids record)
+                   :selected-layer-id (record/selected-layer-id record)}
+                  {:undo? true}]})))
+
+(rf/reg-event-fx
   store/app-id :new-perspective-layer
   (fn [cofx [_ record-id]]
     (let [record (:record cofx)

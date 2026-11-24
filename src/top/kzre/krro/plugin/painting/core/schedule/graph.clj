@@ -18,10 +18,18 @@
    (top.kzre.krro.core.util.computing_graph ComputingGraph)
    (top.kzre.krro.core.util.diff IDiff)))
 
-(defn pass-though
-  "图层组穿透，目前没有引用图层，先仅根据图层属性进行穿透处理"
+(defn pass-through
+  "图层组穿透，目前没有引用图层，先仅根据图层属性进行穿透处理。
+   穿透后组可能展开为子图层向量，需要扁平化。"
   [layers]
-  (mapv group/pass-through layers))
+  (vec (reduce (fn [acc layer]
+                 (let [result (group/pass-through layer)]
+                   (if (map? result)
+                     (conj acc result)
+                     ;; 穿透的序列
+                     (into acc result))))
+               []
+               layers)))
 
 (declare build-level)
 
@@ -251,7 +259,7 @@
       :build-graph
       (let [ctx-node     (context/make-context-node ctx)
             composed     (schedule.util/compose-transform layers view-matrix)
-            throughed    (pass-though composed)
+            throughed    (pass-through composed)
             current-path (when current-layer-id
                            (path/get-path throughed current-layer-id))
             {:keys [nodes root above-nodes]} (build-level throughed current-path ctx)

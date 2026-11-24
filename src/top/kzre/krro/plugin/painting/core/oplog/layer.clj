@@ -1,6 +1,7 @@
 (ns top.kzre.krro.plugin.painting.core.oplog.layer
   (:require
    [top.kzre.krro.canvas.core.layer.core :as layer.core]
+   [top.kzre.krro.canvas.core.layer.group :as group]
    [top.kzre.krro.canvas.core.layer.path :as layer.path]
    [top.kzre.krro.canvas.raster.core :as raster]
    [top.kzre.krro.canvas.vector.core :as vector]
@@ -37,6 +38,41 @@
           op (changes.layer/new-persistent-layer target-path new-layer)]
       {:dispatch [:oplog/log record-id op ctx]})))
 
+;; 把 layer-ids 编入新的图层组
+(rf/reg-event-fx
+  store/app-id :oplog/new-layer-group
+  (fn [cofx [_ record-id
+             {:keys [selected-layer-ids
+                     selected-layer-id]}
+             ctx]]
+    (when selected-layer-id
+      (let [record (:record cofx)
+            layers (record/layers record)
+            target-path (layer.path/get-path layers selected-layer-id)
+            active-layer (layer.path/get-layer layers target-path)
+            selected-layer-ids (vec selected-layer-ids)
+            selected-paths (mapv #(layer.path/get-path layers %) selected-layer-ids)
+            [_sorted-paths
+             sorted-ids] (layer.path/sort-by-path selected-paths selected-layer-ids)
+            [layers' children]
+            (reduce
+              (fn [[ls cs] lid]
+                (if (= lid selected-layer-id)
+                  ;; 活动图层先不删除，保留方便定位
+                  [ls (conj cs active-layer)]
+                  (let [path (layer.path/get-path ls lid)
+                        [ls' removed]
+                        (layer.path/remove-layer ls path)]
+                    [ls' (conj cs removed)])))
+              [layers []]
+              sorted-ids)
+            group (assoc (group/make-layer-group) :layers (vec children))
+            ;; 更新后的活动位置，因为图层没删，这个保持 ok
+            target-path' (layer.path/get-path layers' selected-layer-id)
+            layers'' (layer.path/update-layer layers' target-path' (constantly group))
+            op (changes.layer/new-layer-group layers'')]
+        {:dispatch [:oplog/log record-id op ctx]}))
+    ))
 
 (rf/reg-event-fx
   store/app-id :oplog/toggle-layer-visibility

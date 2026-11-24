@@ -11,7 +11,8 @@
     [top.kzre.krro.plugin.painting.core.oplog.protocol :as proto]
     [top.kzre.krro.plugin.painting.core.project.canvas :as pc]
     [top.kzre.krro.plugin.painting.core.record :as record]
-    [top.kzre.krro.plugin.undo.core :as undo]))
+    [top.kzre.krro.plugin.undo.core :as undo]
+    [top.kzre.krro.plugin.painting.core.changes.viewport :as viewport]))
 
 (defrecord LayerMetaDataChanged
   [layer-id metadata dirty-tiles dirty-transform]
@@ -91,3 +92,18 @@
 (defn new-persistent-layer
   [path layer]
   (->NewPersistentLayer path layer))
+
+(defrecord NewLayerGroup
+  [new-layers]
+  proto/IOperation
+  (realize [_ {:keys [canvas-id] :as record} _ctx]
+    [(assoc-in record [:canvas-data :layers] new-layers)
+     [[:render-canvas canvas-id (viewport/refreshed)]
+      [:rerender-canvas-frame canvas-id]]])
+
+  (record! [_ {:keys [canvas-id] :as _record}]
+    (undo.edit-canvas/record-edit-canvas! canvas-id)))
+
+(defn new-layer-group
+  [ layers]
+  (->NewLayerGroup layers))

@@ -5,7 +5,8 @@
             [top.kzre.krro.core.message :as msg]
             [top.kzre.krro.core.reframe :as rf]
             [top.kzre.krro.core.window :as win]
-            [top.kzre.krro.plugin.painting.core.spec :as spec]))
+            [top.kzre.krro.plugin.painting.core.spec :as spec]
+            [top.kzre.krro.plugin.painting.core.store :as store]))
 
 
 (defn new-raster-layer-command
@@ -68,3 +69,19 @@
   delete-selected-layers-command
   :description "删除被选中的图层"
   :interactive true)
+
+
+(defn group-selected-layers
+  "从当前 frame 获取 canvas-id，并切换当前图层为 layer-id。"
+  [_]
+  (if-let [f (win/active-frame)]
+    (if-let [canvas-id (frame/param f spec/canvas-id-key)]
+      (store/dispatch [:new-layer-group canvas-id])
+      (msg/warn "No canvas-id found in current frame"))
+    (msg/warn "No current frame active")))
+
+(cmd/reg-command
+  :krro.painting/group-selected-layers
+  group-selected-layers
+  :description "将选中的图层进行打组"
+ )
