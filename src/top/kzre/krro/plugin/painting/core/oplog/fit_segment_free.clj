@@ -23,6 +23,6 @@
           new-paths  (assoc base-paths path-id new-path)
           anchors    [(cv/->Anchor path-id seg-idx)
                       (cv/->Anchor path-id (inc seg-idx))]
-          op         (change/make-vector-anchors-attr-changed
-                       layer-id old-paths new-paths anchors layer-transform)]
+          op (change/make-vector-anchor-positions-changed
+                    layer-id old-paths new-paths anchors layer-transform)]
       {:dispatch [:oplog/log canvas-id op ctx]})))

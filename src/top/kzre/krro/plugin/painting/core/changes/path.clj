@@ -167,12 +167,12 @@
 
 
 (defn make-vector-anchor-positions-changed
-  "锚点位置变化。
+  "锚点位置变化(简单起见，包括手柄)。
    old-paths —— 旧 paths（算旧位置瓦片）
    new-paths —— 新 paths（算新位置瓦片）
    anchors   —— [Anchor ...]，变化的锚点集合
    脏瓦片 —— 每个锚点旧位置 ∪ 新位置两侧段的并集"
-  [layer-id old-paths new-paths dirty-transform & anchors ]
+  [layer-id old-paths new-paths anchors dirty-transform]
   (let [changed-ids   (into #{} (map :path-id anchors))
         paths-changed (select-keys new-paths changed-ids)
         dirty-tiles   (into #{}
@@ -214,7 +214,7 @@
                             dirty-tiles dirty-transform))
 
 (defn make-vector-anchors-attr-changed
-  "锚点级非几何属性变化（手柄 / 连续性等）。
+  "锚点级非几何属性变化（ 连续性等）。
    old-paths —— 旧 paths（算旧段瓦片）
    new-paths —— 新 paths（算新段瓦片 + 提取 paths-changed）
    anchors   —— [Anchor ...]，属性变化的锚点集合

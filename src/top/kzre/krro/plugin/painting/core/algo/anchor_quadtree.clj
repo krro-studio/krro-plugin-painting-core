@@ -221,32 +221,30 @@
 
 (defn update-anchors!
   [^QuadTree anchor-tree ^RectQuadTree seg-tree old-paths new-paths anchors]
-  (let [cnt (count anchors)]
-    (loop [i 0]
-      (when (< i cnt)
-        (let [anchor    (nth anchors i)
-              old-pt    (get-point-safe old-paths (:path-id anchor) (:point-idx anchor))
-              new-pt    (get-point-safe new-paths (:path-id anchor) (:point-idx anchor))]
-          ;; 锚点本身
-          (when old-pt
-            (.delete anchor-tree (double (:x old-pt)) (double (:y old-pt)) anchor))
-          (when new-pt
-            (.insert anchor-tree (double (:x new-pt)) (double (:y new-pt)) anchor))
-          ;; handle 点
-          (update-anchor-handles! anchor-tree old-paths new-paths anchor)
-          ;; 旧位置相邻段
-          (let [[old-left old-right] (anchor-affected-seg-idxs old-paths anchor)]
-            (when old-left
-              (seg-update! seg-tree old-paths new-paths (:path-id anchor) old-left))
-            (when old-right
-              (seg-update! seg-tree old-paths new-paths (:path-id anchor) old-right)))
-          ;; 新位置相邻段
-          (let [[new-left new-right] (anchor-affected-seg-idxs new-paths anchor)]
-            (when new-left
-              (seg-update! seg-tree old-paths new-paths (:path-id anchor) new-left))
-            (when new-right
-              (seg-update! seg-tree old-paths new-paths (:path-id anchor) new-right))))
-        (recur (inc i)))))
+  (doseq [anchor anchors]
+    (let [path-id (:path-id anchor)
+          point-idx (:point-idx anchor)
+          old-pt    (get-point-safe old-paths path-id point-idx)
+          new-pt    (get-point-safe new-paths path-id point-idx)]
+      ;; 锚点本身
+      (when old-pt
+        (.delete anchor-tree (double (:x old-pt)) (double (:y old-pt)) anchor))
+      (when new-pt
+        (.insert anchor-tree (double (:x new-pt)) (double (:y new-pt)) anchor))
+      ;; handle 点
+      (update-anchor-handles! anchor-tree old-paths new-paths anchor)
+      ;; 旧位置相邻段
+      (let [[old-left old-right] (anchor-affected-seg-idxs old-paths anchor)]
+        (when old-left
+          (seg-update! seg-tree old-paths new-paths path-id old-left))
+        (when old-right
+          (seg-update! seg-tree old-paths new-paths path-id old-right)))
+      ;; 新位置相邻段
+      (let [[new-left new-right] (anchor-affected-seg-idxs new-paths anchor)]
+        (when new-left
+          (seg-update! seg-tree old-paths new-paths path-id new-left))
+        (when new-right
+          (seg-update! seg-tree old-paths new-paths path-id new-right)))))
   anchor-tree)
 
 (defn insert-path-anchors!

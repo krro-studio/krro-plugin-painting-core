@@ -36,8 +36,8 @@
           (record/layer-context (:record cofx) layer-id)
           old-paths (or paths (cv/paths layer))
           new-paths (cv/translate-anchors old-paths anchors dx dy)
-          op (apply change/make-vector-anchor-positions-changed
-                    layer-id old-paths new-paths layer-transform anchors)]
+          op (change/make-vector-anchor-positions-changed
+                    layer-id old-paths new-paths anchors layer-transform)]
       {:dispatch [:oplog/log canvas-id op ctx]})))
 
 ;; 挤出锚点
@@ -175,6 +175,6 @@
           new-paths (bezier.handle/translate-handles old-paths handles dx dy)
           ;; anchor 的更新同时包括 anchor+handle
           anchors (set (map :anchor handles))
-          op (apply change/make-vector-anchor-positions-changed
-                    layer-id old-paths new-paths layer-transform anchors)]
+          op (change/make-vector-anchor-positions-changed
+                    layer-id old-paths new-paths anchors layer-transform )]
       {:dispatch [:oplog/log canvas-id op ctx]})))
