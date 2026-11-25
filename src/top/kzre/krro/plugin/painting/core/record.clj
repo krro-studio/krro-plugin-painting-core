@@ -48,9 +48,13 @@
 
 (defn select-layer
   [record layer-id]
-  (-> record
-      (assoc :selected-layer-id layer-id)
-      (assoc :selected-layer-ids #{layer-id})))
+  (if layer-id
+    (-> record
+        (assoc :selected-layer-id layer-id)
+        (assoc :selected-layer-ids #{layer-id}))
+    (-> record
+        (assoc :selected-layer-id nil)
+        (assoc :selected-layer-ids #{}))))
 
 (defn selected-layer-ids
   [record]

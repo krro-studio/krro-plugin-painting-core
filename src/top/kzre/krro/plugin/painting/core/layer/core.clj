@@ -3,4 +3,5 @@
   (:require
     [top.kzre.krro.plugin.painting.core.layer.events]
     [top.kzre.krro.plugin.painting.core.layer.effects]
+    [top.kzre.krro.plugin.painting.core.layer.undo.core]
     [top.kzre.krro.plugin.painting.core.layer.commands]))

@@ -1,7 +1,9 @@
 (ns top.kzre.krro.plugin.painting.core.changes.viewport
   (:require
     [top.kzre.krro.core.util.diff :as diff]
-    [top.kzre.krro.plugin.painting.core.changes.composite :as composite]))
+    [top.kzre.krro.plugin.painting.core.changes.composite :as composite])
+  (:import (top.kzre.krro.util.math KMath)))
+(def ^:private identity-matrix (KMath/mat2dIdentity))
 
 (defrecord ViewportPan []
   diff/IChange
@@ -35,7 +37,12 @@
 
 (defrecord ViewportRefreshed [])
 
+(defrecord ViewportDirty [dirty-tiles dirty-transform])
+
 (defn refreshed
   "视口全刷新，例如初始化渲染，换画布"
   []
   (->ViewportRefreshed))
+
+(defn dirty [dirty-tiles]
+  (->ViewportDirty dirty-tiles identity-matrix))

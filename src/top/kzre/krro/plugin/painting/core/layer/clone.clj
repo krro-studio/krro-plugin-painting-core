@@ -17,3 +17,6 @@
   (update layer :layers
           (fn [ls]
             (mapv clone-layer ls))))
+
+(defn clone-layers [layers]
+  (mapv clone-layer layers))

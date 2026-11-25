@@ -3,7 +3,6 @@
   (:require [top.kzre.krro.core.command :as cmd]
             [top.kzre.krro.core.frame :as frame]
             [top.kzre.krro.core.message :as msg]
-            [top.kzre.krro.core.reframe :as rf]
             [top.kzre.krro.core.window :as win]
             [top.kzre.krro.plugin.painting.core.spec :as spec]
             [top.kzre.krro.plugin.painting.core.store :as store]))
@@ -14,7 +13,7 @@
   [_]
   (if-let [f (win/active-frame)]
     (if-let [canvas-id (frame/param f spec/canvas-id-key)]
-      (rf/dispatch :krro.painting [:new-raster-layer canvas-id])
+      (store/dispatch [:new-raster-layer canvas-id])
       (msg/warn "No canvas-id found in current frame"))
     (msg/warn "No current frame active")))
 
@@ -29,7 +28,7 @@
   [_]
   (if-let [f (win/active-frame)]
     (if-let [canvas-id (frame/param f spec/canvas-id-key)]
-      (rf/dispatch :krro.painting [:new-vector-layer canvas-id])
+      (store/dispatch [:new-vector-layer canvas-id])
       (msg/warn "No canvas-id found in current frame"))
     (msg/warn "No current frame active")))
 
@@ -44,7 +43,7 @@
   [_]
   (if-let [f (win/active-frame)]
     (if-let [canvas-id (frame/param f spec/canvas-id-key)]
-      (rf/dispatch :krro.painting [:new-perspective-layer canvas-id])
+      (store/dispatch [:new-perspective-layer canvas-id])
       (msg/warn "No canvas-id found in current frame"))
     (msg/warn "No current frame active")))
 
@@ -60,7 +59,7 @@
   [_]
   (if-let [f (win/active-frame)]
     (if-let [canvas-id (frame/param f spec/canvas-id-key)]
-      (rf/dispatch :krro.painting [:delete-selected-layers canvas-id])
+      (store/dispatch [:delete-selected-layers canvas-id])
       (msg/warn "No canvas-id found in current frame"))
     (msg/warn "No current frame active")))
 
@@ -85,3 +84,4 @@
   group-selected-layers
   :description "将选中的图层进行打组"
  )
+

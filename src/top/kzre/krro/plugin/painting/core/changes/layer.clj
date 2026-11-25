@@ -11,8 +11,12 @@
     [top.kzre.krro.plugin.painting.core.oplog.protocol :as proto]
     [top.kzre.krro.plugin.painting.core.project.canvas :as pc]
     [top.kzre.krro.plugin.painting.core.record :as record]
+    [top.kzre.krro.plugin.painting.core.layer.undo.delete-layer :as undo.delete-layer]
+    [top.kzre.krro.plugin.painting.core.layer.dispose :as dispose]
     [top.kzre.krro.plugin.undo.core :as undo]
-    [top.kzre.krro.plugin.painting.core.changes.viewport :as viewport]))
+    [top.kzre.krro.plugin.painting.core.changes.viewport :as viewport])
+  (:import (top.kzre.krro.util.math KMath)))
+(def ^:private identity-matrix (KMath/mat2dIdentity))
 
 (defrecord LayerMetaDataChanged
   [layer-id metadata dirty-tiles dirty-transform]
@@ -107,3 +111,32 @@
 (defn new-layer-group
   [ layers]
   (->NewLayerGroup layers))
+
+(defrecord DeleteLayer
+  [new-layers undo-metadata current-layer-deleted? layer-id-to-focus
+   dirty-tiles dirty-transform]
+  proto/IOperation
+  (realize [this {:keys [canvas-id] :as record} _ctx]
+    [(cond-> record
+        true (update-in [:canvas-data :layers]
+                    (fn [old-layers]
+                      (dispose/dispose-layers! old-layers)
+                      new-layers))
+             ;; 不管如何，清空选择
+        true (record/select-layer nil)
+             ;; 如果当前图层被删了，就重定向到焦点id,但不选择它.
+        current-layer-deleted? (record/set-current-layer layer-id-to-focus))
+
+     [[:render-canvas canvas-id this]
+      [:rerender-canvas-frame canvas-id]]])
+
+  (record! [_ _record]
+    (undo.delete-layer/record! undo-metadata)))
+
+(defn delete-layer
+  [canvas-id new-layers deleted-paths current-layer-deleted? layer-id-to-focus]
+  (let [undo-metadata (undo.delete-layer/undo-metadata canvas-id deleted-paths)]
+    (->DeleteLayer
+      new-layers undo-metadata current-layer-deleted? layer-id-to-focus
+      (:dirty-tiles undo-metadata)
+      identity-matrix)))

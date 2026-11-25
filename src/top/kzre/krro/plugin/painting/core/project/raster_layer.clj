@@ -122,5 +122,5 @@
         (assoc layer :canvas canvas))
       ;; 侧表无记录，新建空画布，并记录异常日志
       (do
-        (log/warn "WARN: No raster record found for layer" (:id layer) ", creating empty canvas.")
+        (log/error "WARN: No raster record found for layer" (:id layer) ", creating empty canvas.")
         (assoc layer :canvas (TiledCanvas. pc/global-tile-size))))))

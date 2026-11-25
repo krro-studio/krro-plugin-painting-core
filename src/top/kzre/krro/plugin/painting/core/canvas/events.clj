@@ -40,8 +40,11 @@
 ;; 刷新和画布相关的所有UI和画布
 (rf/reg-event-fx
   store/app-id :refresh-canvas
-  (fn [_ [_ record-id]]
-    {:fx [[:render-canvas record-id (viewport/refreshed)]
+  (fn [_ [_ record-id & [dirty-tiles]]]
+    {:fx [[:render-canvas record-id
+           (if dirty-tiles
+             (viewport/dirty dirty-tiles)
+             (viewport/refreshed))]
           [:rerender-canvas-frame record-id]]}))
 
 (rf/reg-event-fx

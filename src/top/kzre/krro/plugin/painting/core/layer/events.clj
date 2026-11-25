@@ -3,7 +3,6 @@
   (:require
     [top.kzre.krro.canvas.core.layer.util :as lu]
     [top.kzre.krro.canvas.perspective.core :as perspective]
-    [top.kzre.krro.canvas.vector.core :as vector]
     [top.kzre.krro.core.reframe.core :as rf]
     [top.kzre.krro.plugin.painting.core.record :as record]
     [top.kzre.krro.plugin.painting.core.state :as state]
@@ -39,6 +38,17 @@
                   {:undo? true}]})))
 
 (rf/reg-event-fx
+  store/app-id :delete-selected-layers
+  (fn [cofx [_ record-id]]
+    (let [record (:record cofx)]
+      {:dispatch [:oplog/delete-selected-layers
+                  record-id
+                  {:selected-layer-ids (record/selected-layer-ids record)
+                   :selected-layer-id (record/selected-layer-id record)}
+                  {:undo? true}]})))
+
+
+(rf/reg-event-fx
   store/app-id :new-perspective-layer
   (fn [cofx [_ record-id]]
     (let [record (:record cofx)
@@ -56,40 +66,6 @@
        :fx [[:record-perspective-layer-added record-id layer-id]  ;; undo 记录
             [:rerender-canvas-frame record-id]]})))        ;; UI 刷新
 
-(rf/reg-event-fx
-  store/app-id :after-undo-add-raster-layer
-  (fn [_ [_ record-id layer-id dirty-tiles]]
-    {:fx [[:delete-raster-data layer-id]       ;; 删除光栅数据（I/O）
-          [:render-canvas record-id dirty-tiles]           ;; 重绘画布
-          [:rerender-canvas-frame record-id]]}))  ;; 刷新 UI
-
-(rf/reg-event-fx
-  store/app-id :before-redo-add-raster-layer
-  (fn [_ [_ canvas-id layer-id dirty-tiles]]
-    {:fx [[:unchecked-create-raster-data layer-id canvas-id dirty-tiles]]}))
-
-(rf/reg-event-fx
-  store/app-id :after-redo-add-raster-layer
-  (fn [_ [_ record-id dirty-tiles]]
-    {:fx [[:render-canvas record-id dirty-tiles]
-          [:rerender-canvas-frame record-id]]}))
-
-
-;; 移除被选中的图层
-(rf/reg-event-fx
-  store/app-id :delete-selected-layers
-  (fn [cofx [_ record-id]]
-    (let [st (state/canvas-runtime record-id)
-          id (:selected-layer-id st)
-          ids (:selected-layer-ids st)
-          cd (-> cofx :record :canvas-data)
-          layer-id nil
-          dirty-tiles #{}]
-      {:record (assoc-in (:record cofx) [:canvas-data :current-layer-id] layer-id)
-       :fx [[:set-selected-layer record-id layer-id]   ;; 运行时选中
-            [:render-canvas record-id dirty-tiles]                 ;; 画布重绘
-            [:rerender-canvas-frame record-id]         ;; UI 刷新
-            ]})))
 
 
 

@@ -116,7 +116,7 @@
     (composite/composite-change changes)
     (or changes (composite/empty-composite))))
 
-
+;; TODO nil保守地进入全量刷新
 (defn change-dirty-pairs
   [change]
   (cond
