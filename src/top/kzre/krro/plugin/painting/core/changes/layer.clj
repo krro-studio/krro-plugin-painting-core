@@ -6,15 +6,14 @@
     [top.kzre.krro.core.util.diff :as diff]
     [top.kzre.krro.plugin.painting.core.canvas.undo.edit-canvas :as undo.edit-canvas]
     [top.kzre.krro.plugin.painting.core.changes.composite :as composite]
+    [top.kzre.krro.plugin.painting.core.changes.viewport :as viewport]
+    [top.kzre.krro.plugin.painting.core.layer.dispose :as dispose]
     [top.kzre.krro.plugin.painting.core.layer.tiles :as tiles]
+    [top.kzre.krro.plugin.painting.core.layer.undo.delete-layer :as undo.delete-layer]
     [top.kzre.krro.plugin.painting.core.layer.undo.new-raster-layer :as undo-new-raster-layer]
     [top.kzre.krro.plugin.painting.core.oplog.protocol :as proto]
     [top.kzre.krro.plugin.painting.core.project.canvas :as pc]
-    [top.kzre.krro.plugin.painting.core.record :as record]
-    [top.kzre.krro.plugin.painting.core.layer.undo.delete-layer :as undo.delete-layer]
-    [top.kzre.krro.plugin.painting.core.layer.dispose :as dispose]
-    [top.kzre.krro.plugin.undo.core :as undo]
-    [top.kzre.krro.plugin.painting.core.changes.viewport :as viewport])
+    [top.kzre.krro.plugin.painting.core.record :as record])
   (:import (top.kzre.krro.util.math KMath)))
 (def ^:private identity-matrix (KMath/mat2dIdentity))
 
@@ -41,8 +40,8 @@
        [[:render-canvas canvas-id this]
         [:rerender-canvas-frame canvas-id]]]))
 
-  (record! [_ _record]
-    (undo/record-state!)))
+  (record! [_ {:keys [canvas-id]}]
+    (undo.edit-canvas/record-edit-canvas! canvas-id dirty-tiles)))
 
 
 (defn layer-metadata-changed-refresh
@@ -50,14 +49,14 @@
   [layer metadata dirty-transform]
   (let [dirty-tiles (tiles/layer-tiles layer pc/global-tile-size)]
     (->LayerMetaDataChanged
-      (:id layer) metadata
+      (layer.core/layer-id layer) metadata
       dirty-tiles dirty-transform)))
 
 (defn layer-metadata-changed
   "图层元信息改变，但不影响渲染"
   [layer metadata dirty-transform]
   (->LayerMetaDataChanged
-    (:id layer) metadata
+    (layer.core/layer-id layer) metadata
     #{} dirty-transform))
 
 

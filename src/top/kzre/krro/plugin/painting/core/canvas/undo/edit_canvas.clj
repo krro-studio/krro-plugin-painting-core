@@ -7,24 +7,27 @@
 
 (defn record-edit-canvas!
   "记录画布的持久化数据发生编程，重新渲染相关显示"
-  [canvas-id]
-  (undo/record-fx!
-    (undo-key)
-    {:canvas-id canvas-id}))
+  ([canvas-id]
+   (record-edit-canvas! canvas-id nil))
+  ([canvas-id dirty-tiles]
+   (undo/record-fx!
+     (undo-key)
+     {:canvas-id canvas-id
+      :dirty-tiles dirty-tiles})))
 
 (undo/reg-undo-fx
   (undo-key)
   {:undo
    (fn [{:keys [old-metadata]} cb]
-     (let [{:keys [canvas-id]} old-metadata]
+     (let [{:keys [canvas-id dirty-tiles]} old-metadata]
        (cb)
        (store/dispatch
-         [:refresh-canvas canvas-id]))
+         [:refresh-canvas canvas-id dirty-tiles]))
      )
    :redo
    (fn [{:keys [new-metadata]} cb]
-     (let [{:keys [canvas-id]} new-metadata]
+     (let [{:keys [canvas-id dirty-tiles]} new-metadata]
        (cb)
        (store/dispatch
-         [:refresh-canvas canvas-id]))
+         [:refresh-canvas canvas-id dirty-tiles]))
      )})

@@ -183,7 +183,7 @@
   (fn [cofx [_ record-id layer-id ctx]]
     (let [{:keys [layer layer-transform]}
           (record/layer-context (:record cofx) layer-id)
-          op (changes.layer/layer-metadata-changed-refresh
+          op (changes.layer/layer-metadata-changed
                layer
                {:locked? (not (boolean (project.layer/locked? layer)))}
                layer-transform)]
